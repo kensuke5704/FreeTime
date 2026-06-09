@@ -35,7 +35,7 @@ struct DayTimeline: View {
 
     var body: some View {
         GeometryReader { geometry in
-            ZStack(alignment: .leading) {
+            ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 6)
                     .fill(Color.white)
                     .overlay {
@@ -43,30 +43,35 @@ struct DayTimeline: View {
                             .stroke(Color(.separator), lineWidth: 0.5)
                     }
 
-                ForEach(plans) { plan in
-                    let dayStart = calendar.startOfDay(for: date)
-                    let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
-                    let visibleStart = max(plan.start, dayStart)
-                    let visibleEnd = min(plan.end, dayEnd)
-                    let start = minutesSinceDayStart(visibleStart, dayStart: dayStart)
-                    let end = minutesSinceDayStart(visibleEnd, dayStart: dayStart)
-                    let width = max(2, geometry.size.width * CGFloat(end - start) / 1440)
-                    let x = geometry.size.width * CGFloat(start) / 1440
+                ForEach(timelineItems) { item in
+                    let width = max(
+                        2,
+                        geometry.size.width * CGFloat(item.endMinute - item.startMinute) / 1440
+                    )
+                    let x = geometry.size.width * CGFloat(item.startMinute) / 1440
+                    let spacing: CGFloat = item.laneCount > 1 ? 2 : 0
+                    let availableHeight = geometry.size.height - spacing * CGFloat(item.laneCount - 1)
+                    let height = availableHeight / CGFloat(item.laneCount)
+                    let y = CGFloat(item.lane) * (height + spacing)
 
                     Button {
-                        onSelectPlan?(plan)
+                        onSelectPlan?(item.plan)
                     } label: {
                         ZStack {
-                            if plan.kind == .off && mode != .all {
+                            if item.plan.kind == .off && mode != .all {
                                 HiddenOffPattern()
                             } else {
                                 RoundedRectangle(cornerRadius: 4)
-                                    .fill(plan.kind == .off ? Color(.darkGray) : plan.color.swiftUIColor.opacity(0.85))
+                                    .fill(
+                                        item.plan.kind == .off
+                                            ? Color(.darkGray)
+                                            : item.plan.color.swiftUIColor.opacity(0.85)
+                                    )
                             }
 
-                            if showLabels, plan.kind == .on || mode == .all {
+                            if showLabels, item.plan.kind == .on || mode == .all {
                                 ViewThatFits(in: .horizontal) {
-                                    Text(plan.title)
+                                    Text(item.plan.title)
                                         .font(.caption2.weight(.semibold))
                                         .foregroundStyle(.white)
                                         .lineLimit(1)
@@ -79,12 +84,12 @@ struct DayTimeline: View {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                             }
                         }
-                        .frame(width: width, height: geometry.size.height)
+                        .frame(width: width, height: height)
                     }
                     .buttonStyle(.plain)
                     .disabled(onSelectPlan == nil)
-                    .offset(x: x)
-                    .opacity(mode == .onOnly && plan.kind == .off ? 0.32 : 1)
+                    .offset(x: x, y: y)
+                    .opacity(mode == .onOnly && item.plan.kind == .off ? 0.32 : 1)
                 }
 
                 ForEach([6, 12, 18], id: \.self) { hour in
@@ -99,6 +104,86 @@ struct DayTimeline: View {
 
     private func minutesSinceDayStart(_ date: Date, dayStart: Date) -> Int {
         max(0, min(1440, Int(date.timeIntervalSince(dayStart) / 60)))
+    }
+
+    private var timelineItems: [TimelineItem] {
+        let dayStart = calendar.startOfDay(for: date)
+        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
+        let visiblePlans = plans.compactMap { plan -> VisiblePlan? in
+            let start = max(plan.start, dayStart)
+            let end = min(plan.end, dayEnd)
+            guard start < end else { return nil }
+            return VisiblePlan(plan: plan, start: start, end: end)
+        }
+        .sorted {
+            if $0.start == $1.start {
+                return $0.end < $1.end
+            }
+            return $0.start < $1.start
+        }
+
+        var result: [TimelineItem] = []
+        var overlapGroup: [VisiblePlan] = []
+        var groupEnd = Date.distantPast
+
+        for visiblePlan in visiblePlans {
+            if !overlapGroup.isEmpty, visiblePlan.start >= groupEnd {
+                result.append(contentsOf: makeTimelineItems(overlapGroup, dayStart: dayStart))
+                overlapGroup.removeAll(keepingCapacity: true)
+                groupEnd = .distantPast
+            }
+            overlapGroup.append(visiblePlan)
+            groupEnd = max(groupEnd, visiblePlan.end)
+        }
+
+        result.append(contentsOf: makeTimelineItems(overlapGroup, dayStart: dayStart))
+        return result
+    }
+
+    private func makeTimelineItems(_ group: [VisiblePlan], dayStart: Date) -> [TimelineItem] {
+        guard !group.isEmpty else { return [] }
+
+        var laneEnds: [Date] = []
+        var assignments: [(visiblePlan: VisiblePlan, lane: Int)] = []
+
+        for visiblePlan in group {
+            let lane: Int
+            if let availableLane = laneEnds.firstIndex(where: { $0 <= visiblePlan.start }) {
+                lane = availableLane
+                laneEnds[availableLane] = visiblePlan.end
+            } else {
+                lane = laneEnds.count
+                laneEnds.append(visiblePlan.end)
+            }
+            assignments.append((visiblePlan, lane))
+        }
+
+        let laneCount = laneEnds.count
+        return assignments.map {
+            TimelineItem(
+                plan: $0.visiblePlan.plan,
+                startMinute: minutesSinceDayStart($0.visiblePlan.start, dayStart: dayStart),
+                endMinute: minutesSinceDayStart($0.visiblePlan.end, dayStart: dayStart),
+                lane: $0.lane,
+                laneCount: laneCount
+            )
+        }
+    }
+
+    private struct VisiblePlan {
+        let plan: TimePlan
+        let start: Date
+        let end: Date
+    }
+
+    private struct TimelineItem: Identifiable {
+        let plan: TimePlan
+        let startMinute: Int
+        let endMinute: Int
+        let lane: Int
+        let laneCount: Int
+
+        var id: UUID { plan.id }
     }
 }
 
