@@ -16,6 +16,8 @@ main_group = project.main_group.new_group("FreeTime", "FreeTime")
 app_group = main_group.new_group("App", "App")
 shared_group = main_group.new_group("Shared", "Shared")
 widget_group = main_group.new_group("Widget", "Widget")
+assets_ref = main_group.new_file("Assets.xcassets")
+app.resources_build_phase.add_file_reference(assets_ref)
 
 Dir.glob(File.join(root, "FreeTime/App/*.swift")).sort.each do |path|
   ref = app_group.new_file(File.basename(path))
@@ -56,7 +58,7 @@ app.build_configurations.each do |config|
   config.build_settings["TARGETED_DEVICE_FAMILY"] = "1"
   config.build_settings["MARKETING_VERSION"] = "1.0"
   config.build_settings["CURRENT_PROJECT_VERSION"] = "1"
-  config.build_settings["ASSETCATALOG_COMPILER_APPICON_NAME"] = ""
+  config.build_settings["ASSETCATALOG_COMPILER_APPICON_NAME"] = "AppIcon"
 end
 
 widget.build_configurations.each do |config|

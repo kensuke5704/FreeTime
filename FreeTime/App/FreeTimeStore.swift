@@ -413,7 +413,14 @@ final class FreeTimeStore: ObservableObject {
             generatedAt: .now,
             freeMinutes: freeMinutes(on: .now),
             nextTitle: upcoming?.title,
-            nextStart: upcoming?.start
+            nextStart: upcoming?.start,
+            onPlans: plans
+                .filter { $0.kind == .on && $0.end > .now }
+                .sorted { $0.start < $1.start }
+                .prefix(100)
+                .map {
+                    WidgetPlanSnapshot(title: $0.title, start: $0.start, end: $0.end)
+                }
         )
         if let data = try? JSONEncoder().encode(snapshot) {
             SharedDefaults.defaults.set(data, forKey: SharedDefaults.snapshotKey)

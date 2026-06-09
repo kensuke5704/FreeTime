@@ -5,6 +5,8 @@ struct WeekView: View {
     @State private var anchor = Date.now
     @State private var displayMode: WeekDisplayMode = .all
     @State private var selectedPlan: TimePlan?
+    @State private var timelineScale: CGFloat = 1
+    @State private var scaleAtGestureStart: CGFloat?
     let openAdd: () -> Void
 
     private var dates: [Date] { store.weekDates(containing: anchor) }
@@ -42,16 +44,42 @@ struct WeekView: View {
                 }
                 .pickerStyle(.segmented)
 
-                HStack {
-                    Spacer().frame(width: 48)
-                    TimelineHourScale()
-                }
+                GeometryReader { geometry in
+                    let baseTimelineWidth = max(280, geometry.size.width - 48)
+                    let timelineWidth = baseTimelineWidth * timelineScale
 
-                VStack(spacing: 10) {
-                    ForEach(dates, id: \.self) { date in
-                        weekRow(date)
+                    ScrollView(.horizontal, showsIndicators: timelineScale > 1) {
+                        VStack(spacing: 10) {
+                            HStack(spacing: 8) {
+                                Color.clear.frame(width: 40, height: 16)
+                                TimelineHourScale()
+                                    .frame(width: timelineWidth)
+                            }
+
+                            ForEach(dates, id: \.self) { date in
+                                weekRow(date, timelineWidth: timelineWidth)
+                            }
+                        }
+                        .frame(width: timelineWidth + 48, alignment: .leading)
+                        .contentShape(Rectangle())
+                        .simultaneousGesture(
+                            MagnifyGesture()
+                                .onChanged { value in
+                                    if scaleAtGestureStart == nil {
+                                        scaleAtGestureStart = timelineScale
+                                    }
+                                    timelineScale = min(
+                                        3,
+                                        max(1, (scaleAtGestureStart ?? 1) * value.magnification)
+                                    )
+                                }
+                                .onEnded { _ in
+                                    scaleAtGestureStart = nil
+                                }
+                        )
                     }
                 }
+                .frame(height: 16 + (68 * 7) + (10 * 7))
 
                 legend
             }
@@ -74,7 +102,7 @@ struct WeekView: View {
         }
     }
 
-    private func weekRow(_ date: Date) -> some View {
+    private func weekRow(_ date: Date, timelineWidth: CGFloat) -> some View {
         let task = store.tasks
             .filter {
                 guard let deadline = $0.deadline else { return false }
@@ -112,7 +140,7 @@ struct WeekView: View {
                 ) { plan in
                     selectedPlan = plan
                 }
-                .frame(height: 48)
+                .frame(width: timelineWidth, height: 48)
             }
             .padding(.vertical, 4)
             .background {
@@ -121,6 +149,7 @@ struct WeekView: View {
                 }
             }
         }
+        .frame(height: 68)
     }
 
     private var legend: some View {

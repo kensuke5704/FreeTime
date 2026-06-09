@@ -12,12 +12,18 @@ struct PlanEditorView: View {
     @State private var memo: String
     @State private var confirmsDeletion = false
 
-    init(plan: TimePlan? = nil) {
+    init(plan: TimePlan? = nil, initialDate: Date? = nil) {
+        let initialStart = initialDate.flatMap {
+            Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: $0)
+        } ?? .today(hour: 18)
+        let initialEnd = Calendar.current.date(byAdding: .hour, value: 1, to: initialStart)
+            ?? .today(hour: 19)
+
         self.plan = plan
         _title = State(initialValue: plan?.title ?? "")
         _kind = State(initialValue: plan?.kind ?? .on)
-        _start = State(initialValue: plan?.start ?? .today(hour: 18))
-        _end = State(initialValue: plan?.end ?? .today(hour: 19))
+        _start = State(initialValue: plan?.start ?? initialStart)
+        _end = State(initialValue: plan?.end ?? initialEnd)
         _color = State(initialValue: plan?.color ?? .blue)
         _memo = State(initialValue: plan?.memo ?? "")
     }
@@ -45,6 +51,13 @@ struct PlanEditorView: View {
 
                 if plan != nil {
                     Section {
+                        Button {
+                            duplicatePlan()
+                        } label: {
+                            Label("予定を複製", systemImage: "doc.on.doc")
+                                .frame(maxWidth: .infinity)
+                        }
+
                         Button("予定を削除", role: .destructive) {
                             confirmsDeletion = true
                         }
@@ -94,6 +107,20 @@ struct PlanEditorView: View {
                 Text("削除した予定は元に戻せません。")
             }
         }
+    }
+
+    private func duplicatePlan() {
+        guard let plan else { return }
+        store.add(TimePlan(
+            title: plan.title,
+            start: plan.start,
+            end: plan.end,
+            kind: plan.kind,
+            color: plan.color,
+            memo: plan.memo,
+            taskID: plan.taskID
+        ))
+        dismiss()
     }
 }
 

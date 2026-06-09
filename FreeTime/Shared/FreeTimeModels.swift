@@ -112,13 +112,32 @@ struct WidgetSnapshot: Codable {
     var freeMinutes: Int
     var nextTitle: String?
     var nextStart: Date?
+    var onPlans: [WidgetPlanSnapshot]?
 
     static let placeholder = WidgetSnapshot(
         generatedAt: .now,
         freeMinutes: 405,
         nextTitle: "課題",
-        nextStart: Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: .now)
+        nextStart: Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: .now),
+        onPlans: [
+            WidgetPlanSnapshot(
+                title: "課題",
+                start: .today(hour: 18),
+                end: .today(hour: 19)
+            ),
+            WidgetPlanSnapshot(
+                title: "ジム",
+                start: .today(hour: 20),
+                end: .today(hour: 21)
+            )
+        ]
     )
+}
+
+struct WidgetPlanSnapshot: Codable, Hashable {
+    var title: String
+    var start: Date
+    var end: Date
 }
 
 enum SharedDefaults {

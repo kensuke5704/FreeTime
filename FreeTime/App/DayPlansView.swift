@@ -3,6 +3,7 @@ import SwiftUI
 struct DayPlansView: View {
     @EnvironmentObject private var store: FreeTimeStore
     @State private var selectedPlan: TimePlan?
+    @State private var isAddingPlan = false
     let date: Date
 
     private var plans: [TimePlan] {
@@ -55,8 +56,20 @@ struct DayPlansView: View {
         }
         .navigationTitle(date.formatted(.dateTime.month().day().weekday(.wide)))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    isAddingPlan = true
+                } label: {
+                    Label("予定を追加", systemImage: "plus")
+                }
+            }
+        }
         .sheet(item: $selectedPlan) { plan in
             PlanEditorView(plan: plan)
+        }
+        .sheet(isPresented: $isAddingPlan) {
+            PlanEditorView(initialDate: date)
         }
     }
 }
