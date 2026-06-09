@@ -42,10 +42,11 @@ embed.symbol_dst_subfolder_spec = :plug_ins
 embed.add_file_reference(widget.product_reference)
 
 app.build_configurations.each do |config|
-  config.build_settings["PRODUCT_BUNDLE_IDENTIFIER"] = "com.example.FreeTime"
+  config.build_settings["PRODUCT_BUNDLE_IDENTIFIER"] = "com.kensuke5704.FreeTime"
   config.build_settings["PRODUCT_NAME"] = "FreeTime"
   config.build_settings["SWIFT_VERSION"] = "5.0"
   config.build_settings["CODE_SIGN_STYLE"] = "Automatic"
+  config.build_settings["DEVELOPMENT_TEAM"] = "Y89MBS6Z86"
   config.build_settings["CODE_SIGN_ENTITLEMENTS"] = "FreeTime/App/FreeTime.entitlements"
   config.build_settings["GENERATE_INFOPLIST_FILE"] = "YES"
   config.build_settings["INFOPLIST_KEY_CFBundleDisplayName"] = "FreeTime"
@@ -59,10 +60,11 @@ app.build_configurations.each do |config|
 end
 
 widget.build_configurations.each do |config|
-  config.build_settings["PRODUCT_BUNDLE_IDENTIFIER"] = "com.example.FreeTime.Widget"
+  config.build_settings["PRODUCT_BUNDLE_IDENTIFIER"] = "com.kensuke5704.FreeTime.Widget"
   config.build_settings["PRODUCT_NAME"] = "FreeTimeWidget"
   config.build_settings["SWIFT_VERSION"] = "5.0"
   config.build_settings["CODE_SIGN_STYLE"] = "Automatic"
+  config.build_settings["DEVELOPMENT_TEAM"] = "Y89MBS6Z86"
   config.build_settings["CODE_SIGN_ENTITLEMENTS"] = "FreeTime/Widget/FreeTimeWidget.entitlements"
   config.build_settings["INFOPLIST_FILE"] = "FreeTime/Widget/Info.plist"
   config.build_settings["GENERATE_INFOPLIST_FILE"] = "NO"

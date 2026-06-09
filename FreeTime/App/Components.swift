@@ -44,34 +44,46 @@ struct DayTimeline: View {
                     }
 
                 ForEach(plans) { plan in
-                    let start = minute(of: plan.start)
-                    let end = minute(of: plan.end)
+                    let dayStart = calendar.startOfDay(for: date)
+                    let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
+                    let visibleStart = max(plan.start, dayStart)
+                    let visibleEnd = min(plan.end, dayEnd)
+                    let start = minutesSinceDayStart(visibleStart, dayStart: dayStart)
+                    let end = minutesSinceDayStart(visibleEnd, dayStart: dayStart)
                     let width = max(2, geometry.size.width * CGFloat(end - start) / 1440)
                     let x = geometry.size.width * CGFloat(start) / 1440
 
                     Button {
                         onSelectPlan?(plan)
                     } label: {
-                        if plan.kind == .off && mode != .all {
-                            HiddenOffPattern()
-                        } else {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(plan.kind == .off ? Color(.darkGray) : plan.color.swiftUIColor.opacity(0.85))
+                        ZStack {
+                            if plan.kind == .off && mode != .all {
+                                HiddenOffPattern()
+                            } else {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(plan.kind == .off ? Color(.darkGray) : plan.color.swiftUIColor.opacity(0.85))
+                            }
+
+                            if showLabels, plan.kind == .on || mode == .all {
+                                ViewThatFits(in: .horizontal) {
+                                    Text(plan.title)
+                                        .font(.caption2.weight(.semibold))
+                                        .foregroundStyle(.white)
+                                        .lineLimit(1)
+                                        .fixedSize(horizontal: true, vertical: false)
+
+                                    Color.clear
+                                        .frame(width: 0, height: 0)
+                                }
+                                .padding(.horizontal, 4)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            }
                         }
+                        .frame(width: width, height: geometry.size.height)
                     }
                     .buttonStyle(.plain)
                     .disabled(onSelectPlan == nil)
-                    .frame(width: width, height: geometry.size.height)
                     .offset(x: x)
-                    .overlay(alignment: .leading) {
-                        if showLabels, width > 38, plan.kind == .on || mode == .all {
-                            Text(plan.title)
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(plan.kind == .off ? .white : .white)
-                                .lineLimit(1)
-                                .padding(.leading, 4)
-                        }
-                    }
                     .opacity(mode == .onOnly && plan.kind == .off ? 0.32 : 1)
                 }
 
@@ -85,25 +97,29 @@ struct DayTimeline: View {
         }
     }
 
-    private func minute(of date: Date) -> Int {
-        let components = calendar.dateComponents([.hour, .minute], from: date)
-        return (components.hour ?? 0) * 60 + (components.minute ?? 0)
+    private func minutesSinceDayStart(_ date: Date, dayStart: Date) -> Int {
+        max(0, min(1440, Int(date.timeIntervalSince(dayStart) / 60)))
     }
 }
 
 struct TimelineHourScale: View {
     var body: some View {
-        HStack(spacing: 0) {
+        GeometryReader { geometry in
             ForEach([0, 6, 12, 18, 24], id: \.self) { hour in
                 Text("\(hour)")
-                    .frame(
-                        maxWidth: .infinity,
-                        alignment: hour == 0 ? .leading : hour == 24 ? .trailing : .center
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28)
+                    .position(
+                        x: min(
+                            geometry.size.width - 14,
+                            max(14, geometry.size.width * CGFloat(hour) / 24)
+                        ),
+                        y: geometry.size.height / 2
                     )
             }
         }
-        .font(.caption2.monospacedDigit())
-        .foregroundStyle(.secondary)
+        .frame(height: 16)
     }
 }
 

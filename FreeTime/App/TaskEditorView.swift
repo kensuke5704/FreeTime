@@ -10,7 +10,7 @@ struct TaskEditorView: View {
     @State private var priority = 1
     @State private var memo = ""
     @State private var allocateAfterSave = true
-    @State private var savedTaskID: UUID?
+    @State private var pendingTask: FreeTimeTask?
 
     var body: some View {
         NavigationStack {
@@ -54,21 +54,21 @@ struct TaskEditorView: View {
                             priority: priority,
                             memo: memo
                         )
-                        store.add(task)
                         if allocateAfterSave {
-                            savedTaskID = task.id
+                            pendingTask = task
                         } else {
+                            store.add(task)
                             dismiss()
                         }
                     }
                 }
             }
             .sheet(isPresented: Binding(
-                get: { savedTaskID != nil },
-                set: { if !$0 { savedTaskID = nil } }
+                get: { pendingTask != nil },
+                set: { if !$0 { pendingTask = nil } }
             )) {
-                if let savedTaskID {
-                    SlotAllocatorView(taskID: savedTaskID) {
+                if let pendingTask {
+                    SlotAllocatorView(task: pendingTask, savesTaskOnCommit: true) {
                         dismiss()
                     }
                 }

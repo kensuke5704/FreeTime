@@ -29,6 +29,11 @@ struct TasksView: View {
                         } label: {
                             TaskRow(task: task)
                         }
+                        .swipeActions {
+                            Button("削除", role: .destructive) {
+                                store.delete(task)
+                            }
+                        }
                     }
                 }
             }
@@ -65,8 +70,10 @@ struct TasksView: View {
 
 struct TaskDetailView: View {
     @EnvironmentObject private var store: FreeTimeStore
+    @Environment(\.dismiss) private var dismiss
     let taskID: UUID
     @State private var showAllocator = false
+    @State private var confirmsDeletion = false
 
     private var task: FreeTimeTask? {
         store.tasks.first { $0.id == taskID }
@@ -141,6 +148,11 @@ struct TaskDetailView: View {
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.large)
+
+                        Button("課題を削除", role: .destructive) {
+                            confirmsDeletion = true
+                        }
+                        .frame(maxWidth: .infinity)
                     }
                     .padding()
                 }
@@ -148,6 +160,15 @@ struct TaskDetailView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .sheet(isPresented: $showAllocator) {
                     SlotAllocatorView(taskID: task.id)
+                }
+                .alert("この課題を削除しますか？", isPresented: $confirmsDeletion) {
+                    Button("削除", role: .destructive) {
+                        store.delete(task)
+                        dismiss()
+                    }
+                    Button("キャンセル", role: .cancel) {}
+                } message: {
+                    Text("配置済みの予定も削除されます。")
                 }
             } else {
                 ContentUnavailableView("課題が見つかりません", systemImage: "exclamationmark.triangle")

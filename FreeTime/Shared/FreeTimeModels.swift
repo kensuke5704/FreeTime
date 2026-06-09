@@ -114,7 +114,7 @@ struct WidgetSnapshot: Codable {
 }
 
 enum SharedDefaults {
-    static let appGroup = "group.com.example.FreeTime"
+    static let appGroup = "group.com.kensuke5704.FreeTime"
     static let snapshotKey = "widgetSnapshot"
     static let storeKey = "freeTimeStore"
 

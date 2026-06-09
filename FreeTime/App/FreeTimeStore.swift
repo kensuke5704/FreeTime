@@ -49,6 +49,12 @@ final class FreeTimeStore: ObservableObject {
         save()
     }
 
+    func delete(_ task: FreeTimeTask) {
+        tasks.removeAll { $0.id == task.id }
+        plans.removeAll { $0.taskID == task.id }
+        save()
+    }
+
     func add(_ template: RoutineTemplate) {
         templates.append(template)
         apply(template, replacingExisting: false)
@@ -75,20 +81,28 @@ final class FreeTimeStore: ObservableObject {
         save()
     }
 
-    func addTaskPlan(task: FreeTimeTask, start: Date, end: Date) {
-        plans.append(TimePlan(
-            title: task.title,
-            start: start,
-            end: end,
-            kind: .on,
-            color: .blue,
-            taskID: task.id
-        ))
+    func addTaskPlans(task: FreeTimeTask, intervals: [DateInterval], addTask: Bool = false) {
+        if addTask {
+            tasks.append(task)
+        }
+        for interval in intervals {
+            plans.append(TimePlan(
+                title: task.title,
+                start: interval.start,
+                end: interval.end,
+                kind: .on,
+                color: .blue,
+                taskID: task.id
+            ))
+        }
         save()
     }
 
     func plans(on date: Date) -> [TimePlan] {
-        plans.filter { Calendar.current.isDate($0.start, inSameDayAs: date) }
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: date)
+        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
+        return plans.filter { $0.start < dayEnd && $0.end > dayStart }
             .sorted { $0.start < $1.start }
     }
 
@@ -135,7 +149,9 @@ final class FreeTimeStore: ObservableObject {
                 deadline
             )
             let lower = offset == 0 ? max(.now, date) : date
-            let busy = plans(on: date).map { DateInterval(start: $0.start, end: $0.end) }
+            let busy = plans(on: date).map {
+                DateInterval(start: max($0.start, date), end: min($0.end, dayEnd))
+            }
                 .sorted { $0.start < $1.start }
             var cursor = lower
             var slots: [DateInterval] = []

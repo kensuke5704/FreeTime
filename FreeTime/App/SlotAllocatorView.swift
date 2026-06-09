@@ -3,11 +3,39 @@ import SwiftUI
 struct SlotAllocatorView: View {
     @EnvironmentObject private var store: FreeTimeStore
     @Environment(\.dismiss) private var dismiss
-    let taskID: UUID
-    var completion: (() -> Void)?
-    @State private var selected: Set<DateInterval> = []
 
-    private var task: FreeTimeTask? { store.tasks.first { $0.id == taskID } }
+    private let taskID: UUID?
+    private let draftTask: FreeTimeTask?
+    private let savesTaskOnCommit: Bool
+    var completion: (() -> Void)?
+
+    @State private var selected: [DateInterval] = []
+    @State private var editingSlot: EditableSlot?
+
+    init(taskID: UUID, completion: (() -> Void)? = nil) {
+        self.taskID = taskID
+        draftTask = nil
+        savesTaskOnCommit = false
+        self.completion = completion
+    }
+
+    init(
+        task: FreeTimeTask,
+        savesTaskOnCommit: Bool,
+        completion: (() -> Void)? = nil
+    ) {
+        taskID = nil
+        draftTask = task
+        self.savesTaskOnCommit = savesTaskOnCommit
+        self.completion = completion
+    }
+
+    private var task: FreeTimeTask? {
+        if let draftTask { return draftTask }
+        guard let taskID else { return nil }
+        return store.tasks.first { $0.id == taskID }
+    }
+
     private var slots: [DateInterval] {
         guard let task else { return [] }
         return store.availableSlots(before: task.deadline)
@@ -15,6 +43,7 @@ struct SlotAllocatorView: View {
             .prefix(20)
             .map { $0 }
     }
+
     private var selectedMinutes: Int {
         selected.reduce(0) { $0 + Int($1.duration / 60) }
     }
@@ -36,25 +65,13 @@ struct SlotAllocatorView: View {
                         ForEach(groupedSlots) { group in
                             Section(group.date.shortDateText) {
                                 ForEach(group.slots, id: \.self) { slot in
-                                    Button {
-                                        if selected.contains(slot) {
-                                            selected.remove(slot)
-                                        } else {
-                                            selected.insert(slot)
-                                        }
-                                    } label: {
-                                        HStack {
-                                            Image(systemName: selected.contains(slot) ? "checkmark.circle.fill" : "circle")
-                                                .foregroundStyle(selected.contains(slot) ? .blue : .secondary)
-                                            Text("\(slot.start.timeText)–\(slot.end.timeText)")
-                                                .fontWeight(.semibold)
-                                            Spacer()
-                                            Text(Int(slot.duration / 60).durationText)
-                                                .foregroundStyle(.secondary)
-                                        }
+                                    SlotRow(
+                                        slot: slot,
+                                        selectedInterval: selectedInterval(in: slot)
+                                    ) {
+                                        editingSlot = EditableSlot(interval: slot)
                                     }
-                                    .buttonStyle(.plain)
-                                    .listRowBackground(selected.contains(slot) ? Color.blue.opacity(0.08) : nil)
+                                    .listRowBackground(selectedInterval(in: slot) == nil ? nil : Color.blue.opacity(0.08))
                                 }
                             }
                         }
@@ -68,9 +85,11 @@ struct SlotAllocatorView: View {
                             }
                             .font(.subheadline.weight(.semibold))
                             Button {
-                                for slot in selected {
-                                    store.addTaskPlan(task: task, start: slot.start, end: slot.end)
-                                }
+                                store.addTaskPlans(
+                                    task: task,
+                                    intervals: selected,
+                                    addTask: savesTaskOnCommit
+                                )
                                 completion?()
                                 dismiss()
                             } label: {
@@ -94,7 +113,28 @@ struct SlotAllocatorView: View {
                     Button("閉じる") { dismiss() }
                 }
             }
+            .sheet(item: $editingSlot) { editableSlot in
+                let slot = editableSlot.interval
+                SlotTimeEditorView(
+                    slot: slot,
+                    initial: selectedInterval(in: slot)
+                ) { interval in
+                    selected.removeAll { sameSlot($0, slot) }
+                    selected.append(interval)
+                    selected.sort { $0.start < $1.start }
+                } onRemove: {
+                    selected.removeAll { sameSlot($0, slot) }
+                }
+            }
         }
+    }
+
+    private func selectedInterval(in slot: DateInterval) -> DateInterval? {
+        selected.first { sameSlot($0, slot) }
+    }
+
+    private func sameSlot(_ interval: DateInterval, _ slot: DateInterval) -> Bool {
+        interval.start >= slot.start && interval.end <= slot.end
     }
 
     private struct SlotGroup: Identifiable {
@@ -103,8 +143,124 @@ struct SlotAllocatorView: View {
         var id: Date { date }
     }
 
+    private struct EditableSlot: Identifiable {
+        let id = UUID()
+        let interval: DateInterval
+    }
+
     private var groupedSlots: [SlotGroup] {
         let dictionary = Dictionary(grouping: slots) { Calendar.current.startOfDay(for: $0.start) }
         return dictionary.keys.sorted().map { SlotGroup(date: $0, slots: dictionary[$0] ?? []) }
+    }
+}
+
+private struct SlotRow: View {
+    let slot: DateInterval
+    let selectedInterval: DateInterval?
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: selectedInterval == nil ? "circle" : "checkmark.circle.fill")
+                    .foregroundStyle(selectedInterval == nil ? Color.secondary : Color.blue)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(slot.start.timeText)–\(slot.end.timeText)")
+                        .fontWeight(.semibold)
+                    if let selectedInterval {
+                        Text("配置 \(selectedInterval.start.timeText)–\(selectedInterval.end.timeText)")
+                            .font(.caption)
+                            .foregroundStyle(.blue)
+                    }
+                }
+                Spacer()
+                Text(Int(slot.duration / 60).durationText)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct SlotTimeEditorView: View {
+    @Environment(\.dismiss) private var dismiss
+    let slot: DateInterval
+    let onSave: (DateInterval) -> Void
+    let onRemove: () -> Void
+
+    @State private var start: Date
+    @State private var end: Date
+
+    init(
+        slot: DateInterval,
+        initial: DateInterval?,
+        onSave: @escaping (DateInterval) -> Void,
+        onRemove: @escaping () -> Void
+    ) {
+        self.slot = slot
+        self.onSave = onSave
+        self.onRemove = onRemove
+        _start = State(initialValue: initial?.start ?? slot.start)
+        _end = State(initialValue: initial?.end ?? min(
+            slot.end,
+            Calendar.current.date(byAdding: .hour, value: 1, to: slot.start) ?? slot.end
+        ))
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("選択した空き時間") {
+                    Text("\(slot.start.shortDateText) \(slot.start.timeText)–\(slot.end.timeText)")
+                }
+                Section("配置する時間") {
+                    DatePicker(
+                        "開始",
+                        selection: $start,
+                        in: slot.start...latestStart,
+                        displayedComponents: .hourAndMinute
+                    )
+                    DatePicker(
+                        "終了",
+                        selection: $end,
+                        in: earliestEnd...slot.end,
+                        displayedComponents: .hourAndMinute
+                    )
+                }
+                Section {
+                    Button("この選択を解除", role: .destructive) {
+                        onRemove()
+                        dismiss()
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .navigationTitle("配置時間を選択")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("キャンセル") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("決定") {
+                        onSave(DateInterval(start: start, end: end))
+                        dismiss()
+                    }
+                }
+            }
+            .onChange(of: start) { _, newValue in
+                if end <= newValue {
+                    end = min(slot.end, Calendar.current.date(byAdding: .minute, value: 15, to: newValue) ?? slot.end)
+                }
+            }
+        }
+    }
+
+    private var latestStart: Date {
+        Calendar.current.date(byAdding: .minute, value: -15, to: slot.end) ?? slot.start
+    }
+
+    private var earliestEnd: Date {
+        Calendar.current.date(byAdding: .minute, value: 15, to: start) ?? slot.end
     }
 }
