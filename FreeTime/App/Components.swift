@@ -29,6 +29,7 @@ struct DayTimeline: View {
     let plans: [TimePlan]
     var mode: WeekDisplayMode = .all
     var showLabels = true
+    var hourGridInterval = 6
     var onSelectPlan: ((TimePlan) -> Void)?
 
     private let calendar = Calendar.current
@@ -92,7 +93,7 @@ struct DayTimeline: View {
                     .opacity(mode == .onOnly && item.plan.kind == .off ? 0.32 : 1)
                 }
 
-                ForEach([6, 12, 18], id: \.self) { hour in
+                ForEach(Array(stride(from: hourGridInterval, to: 24, by: hourGridInterval)), id: \.self) { hour in
                     Rectangle()
                         .fill(Color(.separator).opacity(0.45))
                         .frame(width: 0.5)
@@ -188,9 +189,11 @@ struct DayTimeline: View {
 }
 
 struct TimelineHourScale: View {
+    var interval = 6
+
     var body: some View {
         GeometryReader { geometry in
-            ForEach([0, 6, 12, 18, 24], id: \.self) { hour in
+            ForEach(Array(stride(from: 0, through: 24, by: interval)), id: \.self) { hour in
                 Text("\(hour)")
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)

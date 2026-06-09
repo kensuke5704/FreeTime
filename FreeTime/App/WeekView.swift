@@ -6,7 +6,6 @@ struct WeekView: View {
     @State private var displayMode: WeekDisplayMode = .all
     @State private var selectedPlan: TimePlan?
     @State private var timelineScale: CGFloat = 1
-    @State private var scaleAtGestureStart: CGFloat?
     let openAdd: () -> Void
 
     private var dates: [Date] { store.weekDates(containing: anchor) }
@@ -51,8 +50,21 @@ struct WeekView: View {
                     ScrollView(.horizontal, showsIndicators: timelineScale > 1) {
                         VStack(spacing: 10) {
                             HStack(spacing: 8) {
-                                Color.clear.frame(width: 40, height: 16)
-                                TimelineHourScale()
+                                Button {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        timelineScale = timelineScale == 1 ? 3 : 1
+                                    }
+                                } label: {
+                                    Image(systemName: timelineScale == 1
+                                          ? "magnifyingglass"
+                                          : "magnifyingglass.circle.fill")
+                                        .frame(width: 40, height: 24)
+                                }
+                                .buttonStyle(.plain)
+                                .foregroundStyle(.blue)
+                                .accessibilityLabel(timelineScale == 1 ? "3倍に拡大" : "元の大きさに戻す")
+
+                                TimelineHourScale(interval: timelineScale == 1 ? 6 : 2)
                                     .frame(width: timelineWidth)
                             }
 
@@ -61,25 +73,9 @@ struct WeekView: View {
                             }
                         }
                         .frame(width: timelineWidth + 48, alignment: .leading)
-                        .contentShape(Rectangle())
-                        .simultaneousGesture(
-                            MagnifyGesture()
-                                .onChanged { value in
-                                    if scaleAtGestureStart == nil {
-                                        scaleAtGestureStart = timelineScale
-                                    }
-                                    timelineScale = min(
-                                        3,
-                                        max(1, (scaleAtGestureStart ?? 1) * value.magnification)
-                                    )
-                                }
-                                .onEnded { _ in
-                                    scaleAtGestureStart = nil
-                                }
-                        )
                     }
                 }
-                .frame(height: 16 + (68 * 7) + (10 * 7))
+                .frame(height: 24 + (68 * 7) + (10 * 7))
 
                 legend
             }
@@ -136,7 +132,8 @@ struct WeekView: View {
                 DayTimeline(
                     date: date,
                     plans: store.plans(on: date),
-                    mode: displayMode
+                    mode: displayMode,
+                    hourGridInterval: timelineScale == 1 ? 6 : 2
                 ) { plan in
                     selectedPlan = plan
                 }

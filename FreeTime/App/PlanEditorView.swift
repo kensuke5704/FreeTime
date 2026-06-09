@@ -57,6 +57,7 @@ struct PlanEditorView: View {
                             Label("予定を複製", systemImage: "doc.on.doc")
                                 .frame(maxWidth: .infinity)
                         }
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
 
                         Button("予定を削除", role: .destructive) {
                             confirmsDeletion = true
