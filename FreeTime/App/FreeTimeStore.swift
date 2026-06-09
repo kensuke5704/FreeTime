@@ -7,6 +7,7 @@ final class FreeTimeStore: ObservableObject {
     @Published var plans: [TimePlan] = []
     @Published var tasks: [FreeTimeTask] = []
     @Published var templates: [RoutineTemplate] = []
+    @Published private(set) var lastAutomaticBackupDate: Date?
 
     private struct Payload: Codable {
         var plans: [TimePlan]
@@ -21,7 +22,10 @@ final class FreeTimeStore: ObservableObject {
     }
 
     init() {
-        if !load() {
+        lastAutomaticBackupDate = newestAutomaticBackupURL()
+            .flatMap { try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate }
+
+        if !load(), !loadLatestAutomaticBackup() {
             save()
         } else {
             applyAutomaticTemplates()
@@ -295,6 +299,7 @@ final class FreeTimeStore: ObservableObject {
         if let data = try? JSONEncoder().encode(payload) {
             SharedDefaults.defaults.set(data, forKey: SharedDefaults.storeKey)
         }
+        saveAutomaticBackup(payload)
         updateWidgetSnapshot()
     }
 
@@ -307,6 +312,96 @@ final class FreeTimeStore: ObservableObject {
         tasks = payload.tasks
         templates = payload.templates
         return true
+    }
+
+    private func saveAutomaticBackup(_ payload: Payload) {
+        let envelope = BackupEnvelope(version: 1, exportedAt: .now, payload: payload)
+        guard let data = try? JSONEncoder().encode(envelope) else { return }
+
+        do {
+            let directory = try automaticBackupDirectory()
+            let timestamp = Int(Date.now.timeIntervalSince1970 * 1_000)
+            let url = directory.appendingPathComponent("FreeTime-\(timestamp).json")
+            try data.write(to: url, options: .atomic)
+            lastAutomaticBackupDate = .now
+            pruneAutomaticBackups(in: directory)
+        } catch {
+            // The primary app data remains available even if a backup write fails.
+        }
+    }
+
+    private func loadLatestAutomaticBackup() -> Bool {
+        guard
+            let url = newestAutomaticBackupURL(),
+            let data = try? Data(contentsOf: url),
+            let envelope = try? JSONDecoder().decode(BackupEnvelope.self, from: data),
+            envelope.version == 1
+        else {
+            return false
+        }
+
+        plans = envelope.payload.plans
+        tasks = envelope.payload.tasks
+        templates = envelope.payload.templates
+        lastAutomaticBackupDate = envelope.exportedAt
+        return true
+    }
+
+    private func automaticBackupDirectory() throws -> URL {
+        let root = try FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        let directory = root.appendingPathComponent("AutomaticBackups", isDirectory: true)
+        try FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true
+        )
+        return directory
+    }
+
+    private func newestAutomaticBackupURL() -> URL? {
+        guard
+            let directory = try? automaticBackupDirectory(),
+            let urls = try? FileManager.default.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.contentModificationDateKey],
+                options: [.skipsHiddenFiles]
+            )
+        else {
+            return nil
+        }
+
+        return urls
+            .filter { $0.pathExtension == "json" }
+            .sorted { modificationDate(of: $0) > modificationDate(of: $1) }
+            .first
+    }
+
+    private func pruneAutomaticBackups(in directory: URL) {
+        guard let urls = try? FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.contentModificationDateKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return
+        }
+
+        let oldBackups = urls
+            .filter { $0.pathExtension == "json" }
+            .sorted { modificationDate(of: $0) > modificationDate(of: $1) }
+            .dropFirst(10)
+
+        for url in oldBackups {
+            try? FileManager.default.removeItem(at: url)
+        }
+    }
+
+    private func modificationDate(of url: URL) -> Date {
+        (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)
+            ?? .distantPast
     }
 
     private func updateWidgetSnapshot() {

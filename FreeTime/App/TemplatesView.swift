@@ -44,6 +44,13 @@ struct TemplatesView: View {
             }
 
             Section("機種変更・バックアップ") {
+                LabeledContent {
+                    Text(automaticBackupText)
+                        .foregroundStyle(.secondary)
+                } label: {
+                    Label("自動バックアップ", systemImage: "arrow.triangle.2.circlepath")
+                }
+
                 Button {
                     exportBackup()
                 } label: {
@@ -56,7 +63,7 @@ struct TemplatesView: View {
                     Label("バックアップを読み込む", systemImage: "square.and.arrow.down")
                 }
 
-                Text("「ファイル」のiCloud Driveなどに保存すると、新しいiPhoneで復元できます。")
+                Text("データ変更時に端末内へ自動保存します。iCloudバックアップを有効にしている場合は、機種変更時の復元対象になります。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -115,6 +122,11 @@ struct TemplatesView: View {
         } message: {
             Text(backupMessage ?? "")
         }
+    }
+
+    private var automaticBackupText: String {
+        guard let date = store.lastAutomaticBackupDate else { return "未保存" }
+        return date.formatted(.dateTime.month().day().hour().minute())
     }
 
     private func exportBackup() {
