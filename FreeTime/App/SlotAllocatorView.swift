@@ -48,6 +48,11 @@ struct SlotAllocatorView: View {
         selected.reduce(0) { $0 + Int($1.duration / 60) }
     }
 
+    private var remainingMinutes: Int {
+        guard let task else { return 0 }
+        return store.remainingMinutes(for: task)
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -56,7 +61,7 @@ struct SlotAllocatorView: View {
                         Section {
                             VStack(alignment: .leading, spacing: 5) {
                                 Text(task.title).font(.headline)
-                                Text("残り\(task.remainingMinutes.durationText) ・ 締切 \(task.deadlineText)")
+                                Text("残り\(remainingMinutes.durationText) ・ 締切 \(task.deadlineText)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -89,7 +94,7 @@ struct SlotAllocatorView: View {
                             HStack {
                                 Text("選択 \(selectedMinutes.durationText)")
                                 Spacer()
-                                Text("必要 \(task.remainingMinutes.durationText)")
+                                Text("必要 \(remainingMinutes.durationText)")
                             }
                             .font(.subheadline.weight(.semibold))
                             Button {

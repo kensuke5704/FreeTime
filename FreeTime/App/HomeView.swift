@@ -54,7 +54,10 @@ struct HomeView: View {
                             NavigationLink {
                                 TaskDetailView(taskID: task.id)
                             } label: {
-                                TaskRow(task: task)
+                                TaskRow(
+                                    task: task,
+                                    scheduledMinutes: store.scheduledMinutes(for: task)
+                                )
                             }
                             .buttonStyle(.plain)
                             Divider()
@@ -151,7 +154,10 @@ private struct AllIncompleteTasksView: View {
             NavigationLink {
                 TaskDetailView(taskID: task.id)
             } label: {
-                TaskRow(task: task)
+                TaskRow(
+                    task: task,
+                    scheduledMinutes: store.scheduledMinutes(for: task)
+                )
             }
         }
         .overlay {

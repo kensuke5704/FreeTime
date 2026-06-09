@@ -27,7 +27,10 @@ struct TasksView: View {
                         NavigationLink {
                             TaskDetailView(taskID: task.id)
                         } label: {
-                            TaskRow(task: task)
+                            TaskRow(
+                                task: task,
+                                scheduledMinutes: store.scheduledMinutes(for: task)
+                            )
                         }
                         .swipeActions {
                             Button("削除", role: .destructive) {
@@ -96,6 +99,9 @@ struct TaskDetailView: View {
     var body: some View {
         Group {
             if let task {
+                let scheduledMinutes = store.scheduledMinutes(for: task)
+                let progressMinutes = store.progressMinutes(for: task)
+                let remainingMinutes = store.remainingMinutes(for: task)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
                         VStack(alignment: .leading, spacing: 8) {
@@ -109,13 +115,22 @@ struct TaskDetailView: View {
                             .font(.subheadline.weight(.semibold))
 
                             HStack(alignment: .firstTextBaseline) {
-                                Text("\(task.completedMinutes.durationText) / \(task.estimatedMinutes.durationText)")
+                                Text("\(progressMinutes.durationText) / \(task.estimatedMinutes.durationText)")
                                     .font(.title2.bold())
                                 Spacer()
-                                Text("残り\(task.remainingMinutes.durationText)")
+                                Text("残り\(remainingMinutes.durationText)")
                                     .foregroundStyle(.secondary)
                             }
-                            ProgressView(value: Double(task.completedMinutes), total: Double(max(1, task.estimatedMinutes)))
+                            ProgressView(
+                                value: Double(progressMinutes),
+                                total: Double(max(1, task.estimatedMinutes))
+                            )
+
+                            if scheduledMinutes > 0, !task.isCompleted {
+                                Text("配置済み \(scheduledMinutes.durationText)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
 
                         if !task.memo.isEmpty {

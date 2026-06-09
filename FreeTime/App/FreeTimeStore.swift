@@ -133,6 +133,37 @@ final class FreeTimeStore: ObservableObject {
         save()
     }
 
+    func scheduledMinutes(for task: FreeTimeTask) -> Int {
+        let intervals = plans
+            .filter { $0.taskID == task.id && $0.end > $0.start }
+            .map { DateInterval(start: $0.start, end: $0.end) }
+            .sorted { $0.start < $1.start }
+
+        var merged: [DateInterval] = []
+        for interval in intervals {
+            if let last = merged.last, interval.start <= last.end {
+                merged[merged.count - 1] = DateInterval(
+                    start: last.start,
+                    end: max(last.end, interval.end)
+                )
+            } else {
+                merged.append(interval)
+            }
+        }
+
+        return merged.reduce(0) {
+            $0 + Int($1.duration / 60)
+        }
+    }
+
+    func progressMinutes(for task: FreeTimeTask) -> Int {
+        min(task.estimatedMinutes, task.completedMinutes + scheduledMinutes(for: task))
+    }
+
+    func remainingMinutes(for task: FreeTimeTask) -> Int {
+        max(0, task.estimatedMinutes - progressMinutes(for: task))
+    }
+
     func plans(on date: Date) -> [TimePlan] {
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: date)

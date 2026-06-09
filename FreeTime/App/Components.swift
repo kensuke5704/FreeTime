@@ -225,6 +225,15 @@ struct HiddenOffPattern: View {
 
 struct TaskRow: View {
     let task: FreeTimeTask
+    var scheduledMinutes = 0
+
+    private var progressMinutes: Int {
+        min(task.estimatedMinutes, task.completedMinutes + scheduledMinutes)
+    }
+
+    private var remainingMinutes: Int {
+        max(0, task.estimatedMinutes - progressMinutes)
+    }
 
     private var urgencyColor: Color {
         guard let deadline = task.deadline else { return .secondary }
@@ -237,7 +246,7 @@ struct TaskRow: View {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(task.title).font(.body.weight(.semibold))
-                    Text("\(task.category) ・ 残り\(task.remainingMinutes.durationText)")
+                    Text("\(task.category) ・ 残り\(remainingMinutes.durationText)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -246,7 +255,7 @@ struct TaskRow: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(urgencyColor)
             }
-            ProgressView(value: Double(task.completedMinutes), total: Double(max(1, task.estimatedMinutes)))
+            ProgressView(value: Double(progressMinutes), total: Double(max(1, task.estimatedMinutes)))
                 .tint(urgencyColor)
         }
         .padding(.vertical, 5)
