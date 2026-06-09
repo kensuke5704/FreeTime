@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5A833BAAEA1FADA50D033CA5"
+               BlueprintIdentifier = "1D4034E480D079E730F4287D"
                BuildableName = "FreeTime.app"
                BlueprintName = "FreeTime"
                ReferencedContainer = "container:FreeTime.xcodeproj">
@@ -30,7 +30,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5A833BAAEA1FADA50D033CA5"
+            BlueprintIdentifier = "1D4034E480D079E730F4287D"
             BuildableName = "FreeTime.app"
             BlueprintName = "FreeTime"
             ReferencedContainer = "container:FreeTime.xcodeproj">
@@ -53,7 +53,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5A833BAAEA1FADA50D033CA5"
+            BlueprintIdentifier = "1D4034E480D079E730F4287D"
             BuildableName = "FreeTime.app"
             BlueprintName = "FreeTime"
             ReferencedContainer = "container:FreeTime.xcodeproj">
@@ -70,7 +70,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "5A833BAAEA1FADA50D033CA5"
+            BlueprintIdentifier = "1D4034E480D079E730F4287D"
             BuildableName = "FreeTime.app"
             BlueprintName = "FreeTime"
             ReferencedContainer = "container:FreeTime.xcodeproj">

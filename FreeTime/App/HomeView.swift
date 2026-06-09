@@ -3,16 +3,20 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var store: FreeTimeStore
     @State private var selectedPlan: TimePlan?
+    @State private var showsOffPlans = true
     let openAdd: () -> Void
 
     private var todayPlans: [TimePlan] { store.plans(on: .now) }
+    private var visibleTodayPlans: [TimePlan] {
+        showsOffPlans ? todayPlans : todayPlans.filter { $0.kind == .on }
+    }
     private var upcoming: TimePlan? {
         todayPlans.first { $0.start > .now }
     }
     private var urgentTasks: [FreeTimeTask] {
         store.tasks
             .filter { !$0.isCompleted }
-            .sorted { $0.deadline < $1.deadline }
+            .sorted { $0.deadlineSortValue < $1.deadlineSortValue }
             .prefix(2)
             .map { $0 }
     }
@@ -55,22 +59,44 @@ struct HomeView: View {
                             .buttonStyle(.plain)
                             Divider()
                         }
+                        NavigationLink {
+                            AllIncompleteTasksView()
+                        } label: {
+                            Text("もっと見る")
+                                .font(.subheadline.weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
                     }
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("今日の予定")
-                        .font(.headline)
-                    if todayPlans.isEmpty {
+                    HStack {
+                        Text("今日の予定")
+                            .font(.headline)
+                        Spacer()
+                        Button(showsOffPlans ? "OFFを非表示" : "OFFを表示") {
+                            showsOffPlans.toggle()
+                        }
+                        .font(.caption.weight(.semibold))
+                    }
+                    if visibleTodayPlans.isEmpty {
                         ContentUnavailableView {
-                            Label("予定はありません", systemImage: "calendar")
+                            Label(
+                                todayPlans.isEmpty ? "予定はありません" : "ON予定はありません",
+                                systemImage: "calendar"
+                            )
                         } description: {
-                            Text("右下の追加ボタンからONまたはOFF予定を登録できます。")
+                            Text(
+                                todayPlans.isEmpty
+                                    ? "右下の追加ボタンからONまたはOFF予定を登録できます。"
+                                    : "OFFを表示すると、すべての予定を確認できます。"
+                            )
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                     } else {
-                        ForEach(todayPlans) { plan in
+                        ForEach(visibleTodayPlans) { plan in
                             Button {
                                 selectedPlan = plan
                             } label: {
@@ -108,5 +134,32 @@ struct HomeView: View {
         .sheet(item: $selectedPlan) { plan in
             PlanEditorView(plan: plan)
         }
+    }
+}
+
+private struct AllIncompleteTasksView: View {
+    @EnvironmentObject private var store: FreeTimeStore
+
+    private var tasks: [FreeTimeTask] {
+        store.tasks
+            .filter { !$0.isCompleted }
+            .sorted { $0.deadlineSortValue < $1.deadlineSortValue }
+    }
+
+    var body: some View {
+        List(tasks) { task in
+            NavigationLink {
+                TaskDetailView(taskID: task.id)
+            } label: {
+                TaskRow(task: task)
+            }
+        }
+        .overlay {
+            if tasks.isEmpty {
+                ContentUnavailableView("未完了の課題はありません", systemImage: "checkmark.circle")
+            }
+        }
+        .navigationTitle("未完了の課題")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

@@ -14,12 +14,44 @@ final class FreeTimeStore: ObservableObject {
         var templates: [RoutineTemplate]
     }
 
+    private struct BackupEnvelope: Codable {
+        var version: Int
+        var exportedAt: Date
+        var payload: Payload
+    }
+
     init() {
         if !load() {
             save()
         } else {
             applyAutomaticTemplates()
         }
+    }
+
+    func backupData() throws -> Data {
+        let envelope = BackupEnvelope(
+            version: 1,
+            exportedAt: .now,
+            payload: Payload(plans: plans, tasks: tasks, templates: templates)
+        )
+        return try JSONEncoder().encode(envelope)
+    }
+
+    func restoreBackup(from data: Data) throws {
+        let payload: Payload
+        if let envelope = try? JSONDecoder().decode(BackupEnvelope.self, from: data) {
+            guard envelope.version == 1 else {
+                throw BackupError.unsupportedVersion
+            }
+            payload = envelope.payload
+        } else {
+            payload = try JSONDecoder().decode(Payload.self, from: data)
+        }
+
+        plans = payload.plans
+        tasks = payload.tasks
+        templates = payload.templates
+        applyAutomaticTemplates()
     }
 
     func add(_ plan: TimePlan) {
@@ -46,6 +78,9 @@ final class FreeTimeStore: ObservableObject {
     func update(_ task: FreeTimeTask) {
         guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
         tasks[index] = task
+        for planIndex in plans.indices where plans[planIndex].taskID == task.id {
+            plans[planIndex].title = task.title
+        }
         save()
     }
 
@@ -140,6 +175,7 @@ final class FreeTimeStore: ObservableObject {
         let calendar = Calendar.current
         let startDay = calendar.startOfDay(for: .now)
         let lastDay = calendar.startOfDay(for: deadline)
+        guard deadline > .now else { return [] }
         let dayCount = max(0, calendar.dateComponents([.day], from: startDay, to: lastDay).day ?? 0)
 
         return (0...dayCount).flatMap { offset -> [DateInterval] in
@@ -149,8 +185,12 @@ final class FreeTimeStore: ObservableObject {
                 deadline
             )
             let lower = offset == 0 ? max(.now, date) : date
-            let busy = plans(on: date).map {
-                DateInterval(start: max($0.start, date), end: min($0.end, dayEnd))
+            guard lower < dayEnd else { return [] }
+            let busy = plans(on: date).compactMap { plan -> DateInterval? in
+                let start = max(plan.start, date)
+                let end = min(plan.end, dayEnd)
+                guard start < end else { return nil }
+                return DateInterval(start: start, end: end)
             }
                 .sorted { $0.start < $1.start }
             var cursor = lower
@@ -255,4 +295,12 @@ final class FreeTimeStore: ObservableObject {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
+}
+
+private enum BackupError: LocalizedError {
+    case unsupportedVersion
+
+    var errorDescription: String? {
+        "このバックアップは現在のバージョンでは読み込めません。"
+    }
 }

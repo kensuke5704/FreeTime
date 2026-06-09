@@ -7,47 +7,48 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		01B7C34F1C682FC4F058F39A /* TasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A91A6B3208F28DEF36B68CB /* TasksView.swift */; };
-		07C03FF7CD970E31BAAD79A5 /* DayPlansView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13DD93335C60AA5FD66D6068 /* DayPlansView.swift */; };
-		1C472C9F7F768E577F7484A8 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48BF722F86316D2018903B40 /* StatsView.swift */; };
-		1DDB3D853242DD5D517EB338 /* FreeTimeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB88014F6F4DCBD193F76072 /* FreeTimeStore.swift */; };
-		1F0EB54D4AB204BEE4C23513 /* SlotAllocatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF716982F5445D7C611CE88F /* SlotAllocatorView.swift */; };
-		2B16293D788E8368EC36EAAA /* FreeTimeWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 934A73C0C97C1788DAD172F3 /* FreeTimeWidget.appex */; };
-		368ED72543A04F67C7B12125 /* PlanEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7BDFBFDB3235F15EB22CDA0 /* PlanEditorView.swift */; };
-		45F91340226BEE6E5BC0D49F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9523754490AE8E44B579C134 /* Foundation.framework */; };
-		47879C67A1B235EE0E7A31F9 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6A8312F3F9D60BB65F6E8C5 /* Theme.swift */; };
-		47C7C77CC37C03EB296F6812 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F59037C3D6F90D5F8E99964E /* RootView.swift */; };
-		790E5659F2CEA049FA48E903 /* WeekView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0695F96C4392A446C926E756 /* WeekView.swift */; };
-		7C7B0F0DD4EFE8C85C96FDC1 /* FreeTimeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E04B6671B24AF6497D2A234 /* FreeTimeModels.swift */; };
-		823549050037D43A1B531FE3 /* FreeTimeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D4A27CD70319512EFEB458F /* FreeTimeApp.swift */; };
-		9A0C929C1127798B141258D7 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E564191A2C0F498B4B5DF73 /* HomeView.swift */; };
-		A47255DEA5B2CE13F0DE32E4 /* FreeTimeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39AB9C7D7526BC208C9FC6DA /* FreeTimeWidget.swift */; };
-		A8136016B7FEF7E2BDDDB588 /* TemplateEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A13D3BCBC540767B411818F2 /* TemplateEditorView.swift */; };
-		C1B91F79B0720D56D2FC433D /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9523754490AE8E44B579C134 /* Foundation.framework */; };
-		D468CCC6B306BCB32DBEBBC3 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DD9014BDF8091B1197F6B44 /* Components.swift */; };
-		F06F5BF8932021D6B9A6079A /* TemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACBFEF3BD7C080EC5A55594D /* TemplatesView.swift */; };
-		F3F5767A599F2762414C7772 /* FreeTimeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E04B6671B24AF6497D2A234 /* FreeTimeModels.swift */; };
-		FE14EA02E3C0BB36C583D550 /* TaskEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4340CD527069B45A5AAC30C /* TaskEditorView.swift */; };
+		129A6BAE8F53A600506529E0 /* FreeTimeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4EA521E6AEF3149B0839FE2 /* FreeTimeModels.swift */; };
+		14C846D70C58C76C13002A81 /* TemplateEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DD5CE5621FB8AFA8F40CF34 /* TemplateEditorView.swift */; };
+		2DA858A11A88385FA9BD1A41 /* WeekView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A53E210BA679E2743092BAD4 /* WeekView.swift */; };
+		2EBB91C5228133EB9B23AFF9 /* FreeTimeWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 0014E051F7E20C0CBC485513 /* FreeTimeWidget.appex */; };
+		3B6BC8681C12F320F8C6B836 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B565105C6BD2211E72AA9A33 /* HomeView.swift */; };
+		471B900C637278617392CCBD /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A43AAE5E25628378FEE45188 /* Theme.swift */; };
+		4A7FAC31D12ADAC26A68CA90 /* SlotAllocatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF10C3BEDF102824AA547FB /* SlotAllocatorView.swift */; };
+		4E4BC96C47EEC5EE3E1D2419 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96178BEF22CCBFD474081A36 /* StatsView.swift */; };
+		5448569130F9EE1A1F885536 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 433681249873A8FDF6E8AFBB /* Foundation.framework */; };
+		56743ECA5C7FD58DC6B0C676 /* FreeTimeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AE134D6AF2F608FDE086A72 /* FreeTimeStore.swift */; };
+		65F687CEAEEB8307605E5BC3 /* TasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8534E219CDE130ACB9D1897 /* TasksView.swift */; };
+		6A57CD8F12B9A09CB4C42127 /* FreeTimeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4EA521E6AEF3149B0839FE2 /* FreeTimeModels.swift */; };
+		75FA79462B2AE113FF404F05 /* DayPlansView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE61B877DC8D3E7B35105F37 /* DayPlansView.swift */; };
+		7C22CA4CDC8CBC295BF6F3F9 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 686839BD0D53A0B6643DEDDB /* Components.swift */; };
+		8499CEA651412F534CDD5D12 /* BackupDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618DF878F7DF0E2615657EEA /* BackupDocument.swift */; };
+		8BF8DAD0EDBEBC624DDD9037 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 433681249873A8FDF6E8AFBB /* Foundation.framework */; };
+		B4E2B96782F1A1F0371F5EFE /* PlanEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C69D294187DECA184419142D /* PlanEditorView.swift */; };
+		B991C413CC6BD1F3AA63393D /* FreeTimeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 649E930C0989F74D112846EF /* FreeTimeApp.swift */; };
+		E96AF6202C468CC40FE40986 /* TemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6587B2545DC197383FEDD5E8 /* TemplatesView.swift */; };
+		ED6D72F46DA41A98888A9518 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55CE53954A0FF3196F514A89 /* RootView.swift */; };
+		F2CEE205DFDCA2FA510AB95F /* FreeTimeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98A422DEEEB6606BB01A4841 /* FreeTimeWidget.swift */; };
+		FDFCE7C77BF98F31C37FDBC0 /* TaskEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB571B05098B225AB77FC45C /* TaskEditorView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		C7D137763B5FE793C4E1D243 /* PBXContainerItemProxy */ = {
+		4DDA78E0E0DB44099AA5EC44 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 62A6A3C74BA0E05D41052342 /* Project object */;
+			containerPortal = FCA0C59C623F993CD0D6634C /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = CD22FB208DCE2AB2D8F185A1;
+			remoteGlobalIDString = A19BF5ECCABA59938B96D743;
 			remoteInfo = FreeTimeWidget;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		F1D9B043B1B5541506CB5CA0 /* Embed App Extensions */ = {
+		BC13926FBD32E42C6D3974F8 /* Embed App Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				2B16293D788E8368EC36EAAA /* FreeTimeWidget.appex in Embed App Extensions */,
+				2EBB91C5228133EB9B23AFF9 /* FreeTimeWidget.appex in Embed App Extensions */,
 			);
 			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -55,135 +56,137 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0695F96C4392A446C926E756 /* WeekView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeekView.swift; sourceTree = "<group>"; };
-		0D4A27CD70319512EFEB458F /* FreeTimeApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FreeTimeApp.swift; sourceTree = "<group>"; };
-		13DD93335C60AA5FD66D6068 /* DayPlansView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DayPlansView.swift; sourceTree = "<group>"; };
-		2A8CA088759476A0218EC70E /* FreeTimeWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = FreeTimeWidget.entitlements; sourceTree = "<group>"; };
-		39AB9C7D7526BC208C9FC6DA /* FreeTimeWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FreeTimeWidget.swift; sourceTree = "<group>"; };
-		3DD9014BDF8091B1197F6B44 /* Components.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
-		48BF722F86316D2018903B40 /* StatsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
-		4E04B6671B24AF6497D2A234 /* FreeTimeModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FreeTimeModels.swift; sourceTree = "<group>"; };
-		6A91A6B3208F28DEF36B68CB /* TasksView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TasksView.swift; sourceTree = "<group>"; };
-		6E564191A2C0F498B4B5DF73 /* HomeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		934A73C0C97C1788DAD172F3 /* FreeTimeWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FreeTimeWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		9523754490AE8E44B579C134 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
-		A13D3BCBC540767B411818F2 /* TemplateEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TemplateEditorView.swift; sourceTree = "<group>"; };
-		A7BDFBFDB3235F15EB22CDA0 /* PlanEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanEditorView.swift; sourceTree = "<group>"; };
-		ACBFEF3BD7C080EC5A55594D /* TemplatesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TemplatesView.swift; sourceTree = "<group>"; };
-		AF716982F5445D7C611CE88F /* SlotAllocatorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SlotAllocatorView.swift; sourceTree = "<group>"; };
-		B303DBFAA44AD3A558D669D1 /* FreeTime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FreeTime.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		C4340CD527069B45A5AAC30C /* TaskEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TaskEditorView.swift; sourceTree = "<group>"; };
-		C537C6AF68BEBFAD5861FC71 /* FreeTime.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = FreeTime.entitlements; sourceTree = "<group>"; };
-		C6A8312F3F9D60BB65F6E8C5 /* Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
-		ED8934FC569DBF352713A275 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		F59037C3D6F90D5F8E99964E /* RootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		FB88014F6F4DCBD193F76072 /* FreeTimeStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FreeTimeStore.swift; sourceTree = "<group>"; };
+		0014E051F7E20C0CBC485513 /* FreeTimeWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FreeTimeWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		1FF10C3BEDF102824AA547FB /* SlotAllocatorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SlotAllocatorView.swift; sourceTree = "<group>"; };
+		31A761EA9647B48E12F8F908 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		39C62FD56A5B6161FFA904E3 /* FreeTimeWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = FreeTimeWidget.entitlements; sourceTree = "<group>"; };
+		433681249873A8FDF6E8AFBB /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		55CE53954A0FF3196F514A89 /* RootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		5AE134D6AF2F608FDE086A72 /* FreeTimeStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FreeTimeStore.swift; sourceTree = "<group>"; };
+		618DF878F7DF0E2615657EEA /* BackupDocument.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BackupDocument.swift; sourceTree = "<group>"; };
+		649E930C0989F74D112846EF /* FreeTimeApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FreeTimeApp.swift; sourceTree = "<group>"; };
+		6587B2545DC197383FEDD5E8 /* TemplatesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TemplatesView.swift; sourceTree = "<group>"; };
+		686839BD0D53A0B6643DEDDB /* Components.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		8DD5CE5621FB8AFA8F40CF34 /* TemplateEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TemplateEditorView.swift; sourceTree = "<group>"; };
+		8E6765DB20717F65EBD322BF /* FreeTime.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = FreeTime.entitlements; sourceTree = "<group>"; };
+		96178BEF22CCBFD474081A36 /* StatsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
+		98A422DEEEB6606BB01A4841 /* FreeTimeWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FreeTimeWidget.swift; sourceTree = "<group>"; };
+		A43AAE5E25628378FEE45188 /* Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		A53E210BA679E2743092BAD4 /* WeekView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeekView.swift; sourceTree = "<group>"; };
+		A8534E219CDE130ACB9D1897 /* TasksView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TasksView.swift; sourceTree = "<group>"; };
+		A8E5F2C6DF157DF521274413 /* FreeTime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FreeTime.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B565105C6BD2211E72AA9A33 /* HomeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		C69D294187DECA184419142D /* PlanEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanEditorView.swift; sourceTree = "<group>"; };
+		E4EA521E6AEF3149B0839FE2 /* FreeTimeModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FreeTimeModels.swift; sourceTree = "<group>"; };
+		EB571B05098B225AB77FC45C /* TaskEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TaskEditorView.swift; sourceTree = "<group>"; };
+		EE61B877DC8D3E7B35105F37 /* DayPlansView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DayPlansView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		5727D3BC564F90C2ADAF7978 /* Frameworks */ = {
+		43B088CA4975210D79CA423D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				45F91340226BEE6E5BC0D49F /* Foundation.framework in Frameworks */,
+				5448569130F9EE1A1F885536 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A75A0547D88DF6060109454B /* Frameworks */ = {
+		CC069E9A60E8A1701D866481 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C1B91F79B0720D56D2FC433D /* Foundation.framework in Frameworks */,
+				8BF8DAD0EDBEBC624DDD9037 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		402603996DBE76BAB8755B66 /* iOS */ = {
+		3080D5D502C25E4F2895D680 /* iOS */ = {
 			isa = PBXGroup;
 			children = (
-				9523754490AE8E44B579C134 /* Foundation.framework */,
+				433681249873A8FDF6E8AFBB /* Foundation.framework */,
 			);
 			name = iOS;
 			sourceTree = "<group>";
 		};
-		46E8391F4C57CAEA3A2CE71F /* Products */ = {
+		447D0639700E41C61C26C25D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B303DBFAA44AD3A558D669D1 /* FreeTime.app */,
-				934A73C0C97C1788DAD172F3 /* FreeTimeWidget.appex */,
+				A8E5F2C6DF157DF521274413 /* FreeTime.app */,
+				0014E051F7E20C0CBC485513 /* FreeTimeWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		5686924D7614CF52E603F6BB = {
+		50E4C8AAF27B40129B67F5CF /* FreeTime */ = {
 			isa = PBXGroup;
 			children = (
-				46E8391F4C57CAEA3A2CE71F /* Products */,
-				D242A406787B5D5D1EB66449 /* Frameworks */,
-				77747F2AEEF0D5354E7DBE4D /* FreeTime */,
-			);
-			sourceTree = "<group>";
-		};
-		77747F2AEEF0D5354E7DBE4D /* FreeTime */ = {
-			isa = PBXGroup;
-			children = (
-				B914DC55A805978E2E4E1035 /* App */,
-				FD14E1C0A8D632E49AF217CA /* Shared */,
-				C80B76F7659666E3F554BACF /* Widget */,
+				DD2C612439E6170BC0C7F50A /* App */,
+				F122AEB85030A0873C93E2B5 /* Shared */,
+				65B2CDD94D606FD4860107DE /* Widget */,
 			);
 			name = FreeTime;
 			path = FreeTime;
 			sourceTree = "<group>";
 		};
-		B914DC55A805978E2E4E1035 /* App */ = {
+		65B2CDD94D606FD4860107DE /* Widget */ = {
 			isa = PBXGroup;
 			children = (
-				3DD9014BDF8091B1197F6B44 /* Components.swift */,
-				13DD93335C60AA5FD66D6068 /* DayPlansView.swift */,
-				0D4A27CD70319512EFEB458F /* FreeTimeApp.swift */,
-				FB88014F6F4DCBD193F76072 /* FreeTimeStore.swift */,
-				6E564191A2C0F498B4B5DF73 /* HomeView.swift */,
-				A7BDFBFDB3235F15EB22CDA0 /* PlanEditorView.swift */,
-				F59037C3D6F90D5F8E99964E /* RootView.swift */,
-				AF716982F5445D7C611CE88F /* SlotAllocatorView.swift */,
-				48BF722F86316D2018903B40 /* StatsView.swift */,
-				C4340CD527069B45A5AAC30C /* TaskEditorView.swift */,
-				6A91A6B3208F28DEF36B68CB /* TasksView.swift */,
-				A13D3BCBC540767B411818F2 /* TemplateEditorView.swift */,
-				ACBFEF3BD7C080EC5A55594D /* TemplatesView.swift */,
-				C6A8312F3F9D60BB65F6E8C5 /* Theme.swift */,
-				0695F96C4392A446C926E756 /* WeekView.swift */,
-				C537C6AF68BEBFAD5861FC71 /* FreeTime.entitlements */,
-			);
-			name = App;
-			path = App;
-			sourceTree = "<group>";
-		};
-		C80B76F7659666E3F554BACF /* Widget */ = {
-			isa = PBXGroup;
-			children = (
-				39AB9C7D7526BC208C9FC6DA /* FreeTimeWidget.swift */,
-				ED8934FC569DBF352713A275 /* Info.plist */,
-				2A8CA088759476A0218EC70E /* FreeTimeWidget.entitlements */,
+				98A422DEEEB6606BB01A4841 /* FreeTimeWidget.swift */,
+				31A761EA9647B48E12F8F908 /* Info.plist */,
+				39C62FD56A5B6161FFA904E3 /* FreeTimeWidget.entitlements */,
 			);
 			name = Widget;
 			path = Widget;
 			sourceTree = "<group>";
 		};
-		D242A406787B5D5D1EB66449 /* Frameworks */ = {
+		98C14507384823D83A7B0E8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				402603996DBE76BAB8755B66 /* iOS */,
+				3080D5D502C25E4F2895D680 /* iOS */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		FD14E1C0A8D632E49AF217CA /* Shared */ = {
+		DD2C612439E6170BC0C7F50A /* App */ = {
 			isa = PBXGroup;
 			children = (
-				4E04B6671B24AF6497D2A234 /* FreeTimeModels.swift */,
+				618DF878F7DF0E2615657EEA /* BackupDocument.swift */,
+				686839BD0D53A0B6643DEDDB /* Components.swift */,
+				EE61B877DC8D3E7B35105F37 /* DayPlansView.swift */,
+				649E930C0989F74D112846EF /* FreeTimeApp.swift */,
+				5AE134D6AF2F608FDE086A72 /* FreeTimeStore.swift */,
+				B565105C6BD2211E72AA9A33 /* HomeView.swift */,
+				C69D294187DECA184419142D /* PlanEditorView.swift */,
+				55CE53954A0FF3196F514A89 /* RootView.swift */,
+				1FF10C3BEDF102824AA547FB /* SlotAllocatorView.swift */,
+				96178BEF22CCBFD474081A36 /* StatsView.swift */,
+				EB571B05098B225AB77FC45C /* TaskEditorView.swift */,
+				A8534E219CDE130ACB9D1897 /* TasksView.swift */,
+				8DD5CE5621FB8AFA8F40CF34 /* TemplateEditorView.swift */,
+				6587B2545DC197383FEDD5E8 /* TemplatesView.swift */,
+				A43AAE5E25628378FEE45188 /* Theme.swift */,
+				A53E210BA679E2743092BAD4 /* WeekView.swift */,
+				8E6765DB20717F65EBD322BF /* FreeTime.entitlements */,
+			);
+			name = App;
+			path = App;
+			sourceTree = "<group>";
+		};
+		DE258A36431845DC76AC5303 = {
+			isa = PBXGroup;
+			children = (
+				447D0639700E41C61C26C25D /* Products */,
+				98C14507384823D83A7B0E8A /* Frameworks */,
+				50E4C8AAF27B40129B67F5CF /* FreeTime */,
+			);
+			sourceTree = "<group>";
+		};
+		F122AEB85030A0873C93E2B5 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				E4EA521E6AEF3149B0839FE2 /* FreeTimeModels.swift */,
 			);
 			name = Shared;
 			path = Shared;
@@ -192,32 +195,32 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		5A833BAAEA1FADA50D033CA5 /* FreeTime */ = {
+		1D4034E480D079E730F4287D /* FreeTime */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 484D1A7F6AFAA7002BC979D1 /* Build configuration list for PBXNativeTarget "FreeTime" */;
+			buildConfigurationList = 3CB968E9CE9526FBD8548AE8 /* Build configuration list for PBXNativeTarget "FreeTime" */;
 			buildPhases = (
-				D425B561AF59B29C067C5659 /* Sources */,
-				5727D3BC564F90C2ADAF7978 /* Frameworks */,
-				BDC425E3FC52E7D78DB1CE0A /* Resources */,
-				F1D9B043B1B5541506CB5CA0 /* Embed App Extensions */,
+				CFD814A97F78D6405907F4D3 /* Sources */,
+				43B088CA4975210D79CA423D /* Frameworks */,
+				0A24C99EDB6AFBD89ECE3248 /* Resources */,
+				BC13926FBD32E42C6D3974F8 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				1BB25DDB0EED5EA6B5F23D3E /* PBXTargetDependency */,
+				5F688EF8471E4453E49E311E /* PBXTargetDependency */,
 			);
 			name = FreeTime;
 			productName = FreeTime;
-			productReference = B303DBFAA44AD3A558D669D1 /* FreeTime.app */;
+			productReference = A8E5F2C6DF157DF521274413 /* FreeTime.app */;
 			productType = "com.apple.product-type.application";
 		};
-		CD22FB208DCE2AB2D8F185A1 /* FreeTimeWidget */ = {
+		A19BF5ECCABA59938B96D743 /* FreeTimeWidget */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 674D6D400B49891420260D16 /* Build configuration list for PBXNativeTarget "FreeTimeWidget" */;
+			buildConfigurationList = 35D5158A8CE72D6677BEB67C /* Build configuration list for PBXNativeTarget "FreeTimeWidget" */;
 			buildPhases = (
-				674BB156500EBD78A2BC24A3 /* Sources */,
-				A75A0547D88DF6060109454B /* Frameworks */,
-				8118F43B17F53D4837E3E9C7 /* Resources */,
+				ADBB35D7962B68CB537F85A3 /* Sources */,
+				CC069E9A60E8A1701D866481 /* Frameworks */,
+				565BDDB05A32E005A69D49DE /* Resources */,
 			);
 			buildRules = (
 			);
@@ -225,19 +228,19 @@
 			);
 			name = FreeTimeWidget;
 			productName = FreeTimeWidget;
-			productReference = 934A73C0C97C1788DAD172F3 /* FreeTimeWidget.appex */;
+			productReference = 0014E051F7E20C0CBC485513 /* FreeTimeWidget.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		62A6A3C74BA0E05D41052342 /* Project object */ = {
+		FCA0C59C623F993CD0D6634C /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1600;
 				LastUpgradeCheck = 1600;
 			};
-			buildConfigurationList = 7DD07FAA84E41A44BFDFF376 /* Build configuration list for PBXProject "FreeTime" */;
+			buildConfigurationList = 6FEC17F75DFA7BE453EF20FF /* Build configuration list for PBXProject "FreeTime" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -245,28 +248,28 @@
 				en,
 				Base,
 			);
-			mainGroup = 5686924D7614CF52E603F6BB;
+			mainGroup = DE258A36431845DC76AC5303;
 			minimizedProjectReferenceProxies = 0;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 46E8391F4C57CAEA3A2CE71F /* Products */;
+			productRefGroup = 447D0639700E41C61C26C25D /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				5A833BAAEA1FADA50D033CA5 /* FreeTime */,
-				CD22FB208DCE2AB2D8F185A1 /* FreeTimeWidget */,
+				1D4034E480D079E730F4287D /* FreeTime */,
+				A19BF5ECCABA59938B96D743 /* FreeTimeWidget */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		8118F43B17F53D4837E3E9C7 /* Resources */ = {
+		0A24C99EDB6AFBD89ECE3248 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		BDC425E3FC52E7D78DB1CE0A /* Resources */ = {
+		565BDDB05A32E005A69D49DE /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -276,51 +279,74 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		674BB156500EBD78A2BC24A3 /* Sources */ = {
+		ADBB35D7962B68CB537F85A3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7C7B0F0DD4EFE8C85C96FDC1 /* FreeTimeModels.swift in Sources */,
-				A47255DEA5B2CE13F0DE32E4 /* FreeTimeWidget.swift in Sources */,
+				129A6BAE8F53A600506529E0 /* FreeTimeModels.swift in Sources */,
+				F2CEE205DFDCA2FA510AB95F /* FreeTimeWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D425B561AF59B29C067C5659 /* Sources */ = {
+		CFD814A97F78D6405907F4D3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D468CCC6B306BCB32DBEBBC3 /* Components.swift in Sources */,
-				07C03FF7CD970E31BAAD79A5 /* DayPlansView.swift in Sources */,
-				823549050037D43A1B531FE3 /* FreeTimeApp.swift in Sources */,
-				1DDB3D853242DD5D517EB338 /* FreeTimeStore.swift in Sources */,
-				9A0C929C1127798B141258D7 /* HomeView.swift in Sources */,
-				368ED72543A04F67C7B12125 /* PlanEditorView.swift in Sources */,
-				47C7C77CC37C03EB296F6812 /* RootView.swift in Sources */,
-				1F0EB54D4AB204BEE4C23513 /* SlotAllocatorView.swift in Sources */,
-				1C472C9F7F768E577F7484A8 /* StatsView.swift in Sources */,
-				FE14EA02E3C0BB36C583D550 /* TaskEditorView.swift in Sources */,
-				01B7C34F1C682FC4F058F39A /* TasksView.swift in Sources */,
-				A8136016B7FEF7E2BDDDB588 /* TemplateEditorView.swift in Sources */,
-				F06F5BF8932021D6B9A6079A /* TemplatesView.swift in Sources */,
-				47879C67A1B235EE0E7A31F9 /* Theme.swift in Sources */,
-				790E5659F2CEA049FA48E903 /* WeekView.swift in Sources */,
-				F3F5767A599F2762414C7772 /* FreeTimeModels.swift in Sources */,
+				8499CEA651412F534CDD5D12 /* BackupDocument.swift in Sources */,
+				7C22CA4CDC8CBC295BF6F3F9 /* Components.swift in Sources */,
+				75FA79462B2AE113FF404F05 /* DayPlansView.swift in Sources */,
+				B991C413CC6BD1F3AA63393D /* FreeTimeApp.swift in Sources */,
+				56743ECA5C7FD58DC6B0C676 /* FreeTimeStore.swift in Sources */,
+				3B6BC8681C12F320F8C6B836 /* HomeView.swift in Sources */,
+				B4E2B96782F1A1F0371F5EFE /* PlanEditorView.swift in Sources */,
+				ED6D72F46DA41A98888A9518 /* RootView.swift in Sources */,
+				4A7FAC31D12ADAC26A68CA90 /* SlotAllocatorView.swift in Sources */,
+				4E4BC96C47EEC5EE3E1D2419 /* StatsView.swift in Sources */,
+				FDFCE7C77BF98F31C37FDBC0 /* TaskEditorView.swift in Sources */,
+				65F687CEAEEB8307605E5BC3 /* TasksView.swift in Sources */,
+				14C846D70C58C76C13002A81 /* TemplateEditorView.swift in Sources */,
+				E96AF6202C468CC40FE40986 /* TemplatesView.swift in Sources */,
+				471B900C637278617392CCBD /* Theme.swift in Sources */,
+				2DA858A11A88385FA9BD1A41 /* WeekView.swift in Sources */,
+				6A57CD8F12B9A09CB4C42127 /* FreeTimeModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		1BB25DDB0EED5EA6B5F23D3E /* PBXTargetDependency */ = {
+		5F688EF8471E4453E49E311E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = FreeTimeWidget;
-			target = CD22FB208DCE2AB2D8F185A1 /* FreeTimeWidget */;
-			targetProxy = C7D137763B5FE793C4E1D243 /* PBXContainerItemProxy */;
+			target = A19BF5ECCABA59938B96D743 /* FreeTimeWidget */;
+			targetProxy = 4DDA78E0E0DB44099AA5EC44 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		31C27035AB6054429407F79F /* Release */ = {
+		160E07C2BA7D3DEADB814DA4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = FreeTime/Widget/FreeTimeWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Y89MBS6Z86;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FreeTime/Widget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kensuke5704.FreeTime.Widget;
+				PRODUCT_NAME = FreeTimeWidget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		2010859F44B3F0A23B4EC369 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "";
@@ -343,11 +369,10 @@
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
-				VALIDATE_PRODUCT = YES;
 			};
-			name = Release;
+			name = Debug;
 		};
-		702D7D249ECE443621BC8CA4 /* Release */ = {
+		5A92AEF54B342B9BE9961E58 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -402,33 +427,7 @@
 			};
 			name = Release;
 		};
-		A04F6E5D2131A0A7609F5FBC /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = "";
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGN_ENTITLEMENTS = FreeTime/App/FreeTime.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = Y89MBS6Z86;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = FreeTime;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kensuke5704.FreeTime;
-				PRODUCT_NAME = FreeTime;
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Debug;
-		};
-		D557D75F680353AC24FD8477 /* Release */ = {
+		70513AD7544AA1E2B4879549 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
@@ -451,7 +450,7 @@
 			};
 			name = Release;
 		};
-		F03F13DBBB388B99BEB35BB7 /* Debug */ = {
+		8F5B4A66753C6005530FDB6E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -513,59 +512,64 @@
 			};
 			name = Debug;
 		};
-		F2FB5B0737D23A64885DBB88 /* Debug */ = {
+		B477631BD5B2A8157658871D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGN_ENTITLEMENTS = FreeTime/Widget/FreeTimeWidget.entitlements;
+				CODE_SIGN_ENTITLEMENTS = FreeTime/App/FreeTime.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Y89MBS6Z86;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = FreeTime/Widget/Info.plist;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = FreeTime;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.kensuke5704.FreeTime.Widget;
-				PRODUCT_NAME = FreeTimeWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kensuke5704.FreeTime;
+				PRODUCT_NAME = FreeTime;
 				SDKROOT = iphoneos;
-				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
 			};
-			name = Debug;
+			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		484D1A7F6AFAA7002BC979D1 /* Build configuration list for PBXNativeTarget "FreeTime" */ = {
+		35D5158A8CE72D6677BEB67C /* Build configuration list for PBXNativeTarget "FreeTimeWidget" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				31C27035AB6054429407F79F /* Release */,
-				A04F6E5D2131A0A7609F5FBC /* Debug */,
+				70513AD7544AA1E2B4879549 /* Release */,
+				160E07C2BA7D3DEADB814DA4 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		674D6D400B49891420260D16 /* Build configuration list for PBXNativeTarget "FreeTimeWidget" */ = {
+		3CB968E9CE9526FBD8548AE8 /* Build configuration list for PBXNativeTarget "FreeTime" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D557D75F680353AC24FD8477 /* Release */,
-				F2FB5B0737D23A64885DBB88 /* Debug */,
+				B477631BD5B2A8157658871D /* Release */,
+				2010859F44B3F0A23B4EC369 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		7DD07FAA84E41A44BFDFF376 /* Build configuration list for PBXProject "FreeTime" */ = {
+		6FEC17F75DFA7BE453EF20FF /* Build configuration list for PBXProject "FreeTime" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F03F13DBBB388B99BEB35BB7 /* Debug */,
-				702D7D249ECE443621BC8CA4 /* Release */,
+				8F5B4A66753C6005530FDB6E /* Debug */,
+				5A92AEF54B342B9BE9961E58 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 62A6A3C74BA0E05D41052342 /* Project object */;
+	rootObject = FCA0C59C623F993CD0D6634C /* Project object */;
 }

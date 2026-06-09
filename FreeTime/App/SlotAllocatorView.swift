@@ -38,7 +38,7 @@ struct SlotAllocatorView: View {
 
     private var slots: [DateInterval] {
         guard let task else { return [] }
-        return store.availableSlots(before: task.deadline)
+        return store.availableSlots(before: allocationDeadline(for: task))
             .filter { $0.duration >= 30 * 60 }
             .prefix(20)
             .map { $0 }
@@ -56,22 +56,30 @@ struct SlotAllocatorView: View {
                         Section {
                             VStack(alignment: .leading, spacing: 5) {
                                 Text(task.title).font(.headline)
-                                Text("残り\(task.remainingMinutes.durationText) ・ 締切 \(task.deadline.formatted(.dateTime.month().day().hour().minute()))")
+                                Text("残り\(task.remainingMinutes.durationText) ・ 締切 \(task.deadlineText)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
                         }
 
-                        ForEach(groupedSlots) { group in
-                            Section(group.date.shortDateText) {
-                                ForEach(group.slots, id: \.self) { slot in
-                                    SlotRow(
-                                        slot: slot,
-                                        selectedInterval: selectedInterval(in: slot)
-                                    ) {
-                                        editingSlot = EditableSlot(interval: slot)
+                        if groupedSlots.isEmpty {
+                            ContentUnavailableView(
+                                "配置できる空き時間がありません",
+                                systemImage: "calendar.badge.exclamationmark",
+                                description: Text("課題の期限や登録済みの予定を確認してください。")
+                            )
+                        } else {
+                            ForEach(groupedSlots) { group in
+                                Section(group.date.shortDateText) {
+                                    ForEach(group.slots, id: \.self) { slot in
+                                        SlotRow(
+                                            slot: slot,
+                                            selectedInterval: selectedInterval(in: slot)
+                                        ) {
+                                            editingSlot = EditableSlot(interval: slot)
+                                        }
+                                        .listRowBackground(selectedInterval(in: slot) == nil ? nil : Color.blue.opacity(0.08))
                                     }
-                                    .listRowBackground(selectedInterval(in: slot) == nil ? nil : Color.blue.opacity(0.08))
                                 }
                             }
                         }
@@ -135,6 +143,12 @@ struct SlotAllocatorView: View {
 
     private func sameSlot(_ interval: DateInterval, _ slot: DateInterval) -> Bool {
         interval.start >= slot.start && interval.end <= slot.end
+    }
+
+    private func allocationDeadline(for task: FreeTimeTask) -> Date {
+        task.deadline
+            ?? Calendar.current.date(byAdding: .weekOfYear, value: 8, to: .now)
+            ?? .now
     }
 
     private struct SlotGroup: Identifiable {

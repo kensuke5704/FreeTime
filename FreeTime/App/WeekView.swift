@@ -76,8 +76,11 @@ struct WeekView: View {
 
     private func weekRow(_ date: Date) -> some View {
         let task = store.tasks
-            .filter { Calendar.current.isDate($0.deadline, inSameDayAs: date) && !$0.isCompleted }
-            .sorted { $0.deadline < $1.deadline }
+            .filter {
+                guard let deadline = $0.deadline else { return false }
+                return Calendar.current.isDate(deadline, inSameDayAs: date) && !$0.isCompleted
+            }
+            .sorted { $0.deadlineSortValue < $1.deadlineSortValue }
             .first
 
         return HStack(spacing: 8) {
@@ -99,7 +102,7 @@ struct WeekView: View {
                 if let task {
                     Label(task.title, systemImage: "flag.fill")
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(task.deadline.timeIntervalSinceNow < 86_400 ? .red : .orange)
+                        .foregroundStyle((task.deadline?.timeIntervalSinceNow ?? .infinity) < 86_400 ? .red : .orange)
                         .lineLimit(1)
                 }
                 DayTimeline(

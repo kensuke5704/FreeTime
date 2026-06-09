@@ -1,9 +1,16 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct TemplatesView: View {
     @EnvironmentObject private var store: FreeTimeStore
     @State private var selectedTemplate: RoutineTemplate?
     @State private var isAddingTemplate = false
+    @State private var backupDocument = FreeTimeBackupDocument()
+    @State private var isExportingBackup = false
+    @State private var isImportingBackup = false
+    @State private var pendingImportData: Data?
+    @State private var confirmsRestore = false
+    @State private var backupMessage: String?
 
     var body: some View {
         List {
@@ -35,6 +42,24 @@ struct TemplatesView: View {
                     }
                 }
             }
+
+            Section("機種変更・バックアップ") {
+                Button {
+                    exportBackup()
+                } label: {
+                    Label("バックアップを書き出す", systemImage: "square.and.arrow.up")
+                }
+
+                Button {
+                    isImportingBackup = true
+                } label: {
+                    Label("バックアップを読み込む", systemImage: "square.and.arrow.down")
+                }
+
+                Text("「ファイル」のiCloud Driveなどに保存すると、新しいiPhoneで復元できます。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .navigationTitle("テンプレート")
         .navigationBarTitleDisplayMode(.inline)
@@ -52,6 +77,79 @@ struct TemplatesView: View {
         }
         .sheet(item: $selectedTemplate) { template in
             TemplateEditorView(template: template)
+        }
+        .fileExporter(
+            isPresented: $isExportingBackup,
+            document: backupDocument,
+            contentType: .json,
+            defaultFilename: "FreeTime-backup"
+        ) { result in
+            if case .failure(let error) = result {
+                backupMessage = "書き出しに失敗しました。\n\(error.localizedDescription)"
+            }
+        }
+        .fileImporter(
+            isPresented: $isImportingBackup,
+            allowedContentTypes: [.json]
+        ) { result in
+            importBackup(result)
+        }
+        .alert("バックアップを復元しますか？", isPresented: $confirmsRestore) {
+            Button("復元", role: .destructive) {
+                restorePendingBackup()
+            }
+            Button("キャンセル", role: .cancel) {
+                pendingImportData = nil
+            }
+        } message: {
+            Text("現在の予定・課題・テンプレートは、バックアップの内容に置き換わります。")
+        }
+        .alert(
+            "バックアップ",
+            isPresented: Binding(
+                get: { backupMessage != nil },
+                set: { if !$0 { backupMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(backupMessage ?? "")
+        }
+    }
+
+    private func exportBackup() {
+        do {
+            backupDocument = FreeTimeBackupDocument(data: try store.backupData())
+            isExportingBackup = true
+        } catch {
+            backupMessage = "バックアップを作成できませんでした。\n\(error.localizedDescription)"
+        }
+    }
+
+    private func importBackup(_ result: Result<URL, Error>) {
+        do {
+            let url = try result.get()
+            let hasAccess = url.startAccessingSecurityScopedResource()
+            defer {
+                if hasAccess {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            }
+            pendingImportData = try Data(contentsOf: url)
+            confirmsRestore = true
+        } catch {
+            backupMessage = "バックアップを読み込めませんでした。\n\(error.localizedDescription)"
+        }
+    }
+
+    private func restorePendingBackup() {
+        guard let data = pendingImportData else { return }
+        defer { pendingImportData = nil }
+        do {
+            try store.restoreBackup(from: data)
+            backupMessage = "バックアップを復元しました。"
+        } catch {
+            backupMessage = "復元に失敗しました。\n\(error.localizedDescription)"
         }
     }
 }

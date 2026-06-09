@@ -3,14 +3,32 @@ import SwiftUI
 struct TaskEditorView: View {
     @EnvironmentObject private var store: FreeTimeStore
     @Environment(\.dismiss) private var dismiss
-    @State private var title = ""
-    @State private var category = ""
-    @State private var deadline = Calendar.current.date(byAdding: .day, value: 1, to: .today(hour: 23, minute: 59)) ?? .now
-    @State private var estimatedMinutes = 120
-    @State private var priority = 1
-    @State private var memo = ""
-    @State private var allocateAfterSave = true
+    private let task: FreeTimeTask?
+    @State private var title: String
+    @State private var category: String
+    @State private var hasDeadline: Bool
+    @State private var deadline: Date
+    @State private var estimatedMinutes: Int
+    @State private var priority: Int
+    @State private var memo: String
+    @State private var allocateAfterSave: Bool
     @State private var pendingTask: FreeTimeTask?
+
+    init(task: FreeTimeTask? = nil) {
+        self.task = task
+        _title = State(initialValue: task?.title ?? "")
+        _category = State(initialValue: task?.category ?? "")
+        _hasDeadline = State(initialValue: task?.deadline != nil)
+        _deadline = State(
+            initialValue: task?.deadline
+                ?? Calendar.current.date(byAdding: .day, value: 1, to: .today(hour: 23, minute: 59))
+                ?? .now
+        )
+        _estimatedMinutes = State(initialValue: task?.estimatedMinutes ?? 120)
+        _priority = State(initialValue: task?.priority ?? 1)
+        _memo = State(initialValue: task?.memo ?? "")
+        _allocateAfterSave = State(initialValue: task == nil)
+    }
 
     var body: some View {
         NavigationStack {
@@ -18,7 +36,13 @@ struct TaskEditorView: View {
                 Section("課題") {
                     TextField("タイトル", text: $title)
                     TextField("科目・カテゴリ", text: $category)
-                    DatePicker("締切", selection: $deadline, in: Date.now...)
+                    Toggle("期限を設定", isOn: $hasDeadline)
+                    if hasDeadline {
+                        DatePicker("締切", selection: $deadline)
+                    } else {
+                        LabeledContent("締切", value: "無期限")
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 Section("見積もり") {
                     Stepper(
@@ -35,29 +59,37 @@ struct TaskEditorView: View {
                 }
                 Section {
                     TextField("メモ（任意）", text: $memo, axis: .vertical)
-                    Toggle("保存後、空き時間に配置", isOn: $allocateAfterSave)
+                    if task == nil {
+                        Toggle("保存後、空き時間に配置", isOn: $allocateAfterSave)
+                    }
                 }
             }
-            .navigationTitle("課題を追加")
+            .navigationTitle(task == nil ? "課題を追加" : "課題を編集")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("キャンセル") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(allocateAfterSave ? "保存して配置" : "保存") {
-                        let task = FreeTimeTask(
+                    Button(task == nil && allocateAfterSave ? "保存して配置" : "保存") {
+                        let updated = FreeTimeTask(
+                            id: task?.id ?? UUID(),
                             title: title.isEmpty ? "新しい課題" : title,
                             category: category.isEmpty ? "未分類" : category,
-                            deadline: deadline,
+                            deadline: hasDeadline ? deadline : nil,
                             estimatedMinutes: estimatedMinutes,
+                            completedMinutes: task?.completedMinutes ?? 0,
                             priority: priority,
-                            memo: memo
+                            memo: memo,
+                            isCompleted: task?.isCompleted ?? false
                         )
-                        if allocateAfterSave {
-                            pendingTask = task
+                        if task != nil {
+                            store.update(updated)
+                            dismiss()
+                        } else if allocateAfterSave {
+                            pendingTask = updated
                         } else {
-                            store.add(task)
+                            store.add(updated)
                             dismiss()
                         }
                     }

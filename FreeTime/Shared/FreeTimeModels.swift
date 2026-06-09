@@ -30,7 +30,7 @@ struct FreeTimeTask: Identifiable, Codable, Hashable {
     var id = UUID()
     var title: String
     var category: String
-    var deadline: Date
+    var deadline: Date?
     var estimatedMinutes: Int
     var completedMinutes: Int = 0
     var priority: Int = 1
@@ -39,6 +39,14 @@ struct FreeTimeTask: Identifiable, Codable, Hashable {
 
     var remainingMinutes: Int {
         max(0, estimatedMinutes - completedMinutes)
+    }
+
+    var deadlineSortValue: Date {
+        deadline ?? .distantFuture
+    }
+
+    var deadlineText: String {
+        deadline?.formatted(.dateTime.month().day().hour().minute()) ?? "無期限"
     }
 }
 

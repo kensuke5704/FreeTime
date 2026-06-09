@@ -227,7 +227,8 @@ struct TaskRow: View {
     let task: FreeTimeTask
 
     private var urgencyColor: Color {
-        let hours = task.deadline.timeIntervalSinceNow / 3600
+        guard let deadline = task.deadline else { return .secondary }
+        let hours = deadline.timeIntervalSinceNow / 3600
         return hours < 24 ? .red : hours < 72 ? .orange : .secondary
     }
 
@@ -241,7 +242,7 @@ struct TaskRow: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Text(task.deadline.formatted(.dateTime.month().day().hour().minute()))
+                Text(task.deadlineText)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(urgencyColor)
             }

@@ -8,7 +8,7 @@ struct TasksView: View {
     private var visibleTasks: [FreeTimeTask] {
         store.tasks
             .filter { $0.isCompleted == showCompleted }
-            .sorted { $0.deadline < $1.deadline }
+            .sorted { $0.deadlineSortValue < $1.deadlineSortValue }
     }
 
     var body: some View {
@@ -61,9 +61,22 @@ struct TasksView: View {
         let inThreeDays = calendar.date(byAdding: .day, value: 3, to: .now) ?? .now
         let inWeek = calendar.date(byAdding: .day, value: 7, to: .now) ?? .now
         return [
-            TaskGroup(title: "期限間近", tasks: visibleTasks.filter { $0.deadline <= inThreeDays }),
-            TaskGroup(title: "今週", tasks: visibleTasks.filter { $0.deadline > inThreeDays && $0.deadline <= inWeek }),
-            TaskGroup(title: "あとで", tasks: visibleTasks.filter { $0.deadline > inWeek })
+            TaskGroup(
+                title: "期限間近",
+                tasks: visibleTasks.filter { ($0.deadline ?? .distantFuture) <= inThreeDays }
+            ),
+            TaskGroup(
+                title: "今週",
+                tasks: visibleTasks.filter {
+                    guard let deadline = $0.deadline else { return false }
+                    return deadline > inThreeDays && deadline <= inWeek
+                }
+            ),
+            TaskGroup(
+                title: "あとで",
+                tasks: visibleTasks.filter { ($0.deadline ?? .distantFuture) > inWeek && $0.deadline != nil }
+            ),
+            TaskGroup(title: "無期限", tasks: visibleTasks.filter { $0.deadline == nil })
         ].filter { !$0.tasks.isEmpty }
     }
 }
@@ -73,6 +86,7 @@ struct TaskDetailView: View {
     @Environment(\.dismiss) private var dismiss
     let taskID: UUID
     @State private var showAllocator = false
+    @State private var showEditor = false
     @State private var confirmsDeletion = false
 
     private var task: FreeTimeTask? {
@@ -89,8 +103,8 @@ struct TaskDetailView: View {
                                 Label(task.category, systemImage: "folder")
                                     .foregroundStyle(.secondary)
                                 Spacer()
-                                Label(task.deadline.formatted(.dateTime.month().day().hour().minute()), systemImage: "flag.fill")
-                                    .foregroundStyle(task.deadline.timeIntervalSinceNow < 86_400 ? .red : .orange)
+                                Label(task.deadlineText, systemImage: "flag.fill")
+                                    .foregroundStyle(deadlineColor(task))
                             }
                             .font(.subheadline.weight(.semibold))
 
@@ -138,16 +152,27 @@ struct TaskDetailView: View {
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
 
-                        Button {
-                            var updated = task
-                            updated.isCompleted = true
-                            updated.completedMinutes = updated.estimatedMinutes
-                            store.update(updated)
-                        } label: {
-                            Text("完了にする").frame(maxWidth: .infinity)
+                        if !task.isCompleted {
+                            Button {
+                                showEditor = true
+                            } label: {
+                                Label("課題を編集", systemImage: "pencil")
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.large)
+
+                            Button {
+                                var updated = task
+                                updated.isCompleted = true
+                                updated.completedMinutes = updated.estimatedMinutes
+                                store.update(updated)
+                            } label: {
+                                Text("完了にする").frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.large)
                         }
-                        .buttonStyle(.bordered)
-                        .controlSize(.large)
 
                         Button("課題を削除", role: .destructive) {
                             confirmsDeletion = true
@@ -160,6 +185,9 @@ struct TaskDetailView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .sheet(isPresented: $showAllocator) {
                     SlotAllocatorView(taskID: task.id)
+                }
+                .sheet(isPresented: $showEditor) {
+                    TaskEditorView(task: task)
                 }
                 .alert("この課題を削除しますか？", isPresented: $confirmsDeletion) {
                     Button("削除", role: .destructive) {
@@ -174,5 +202,10 @@ struct TaskDetailView: View {
                 ContentUnavailableView("課題が見つかりません", systemImage: "exclamationmark.triangle")
             }
         }
+    }
+
+    private func deadlineColor(_ task: FreeTimeTask) -> Color {
+        guard let deadline = task.deadline else { return .secondary }
+        return deadline.timeIntervalSinceNow < 86_400 ? .red : .orange
     }
 }
