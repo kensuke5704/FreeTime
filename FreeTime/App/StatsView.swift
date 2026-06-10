@@ -16,6 +16,12 @@ struct StatsView: View {
         dates.map { DailyValue(date: $0, minutes: store.freeMinutes(on: $0)) }
     }
     private var weekMinutes: Int { values.reduce(0) { $0 + $1.minutes } }
+    private var weekRemainingMinutes: Int {
+        store.freeMinutes(from: .now, to: remainingIntervalEnd(for: .weekOfYear))
+    }
+    private var monthRemainingMinutes: Int {
+        store.freeMinutes(from: .now, to: remainingIntervalEnd(for: .month))
+    }
     private var weekPlans: [TimePlan] {
         var result: [TimePlan] = []
         for date in dates {
@@ -36,9 +42,14 @@ struct StatsView: View {
                 HStack {
                     FreeTimeMetric(title: "今日", minutes: store.freeMinutes(on: .now))
                     Spacer()
-                    FreeTimeMetric(title: "今週残り", minutes: weekMinutes, prominent: true)
+                    FreeTimeMetric(
+                        title: "今週残り",
+                        minutes: weekRemainingMinutes,
+                        prominent: true,
+                        splitsHoursAndMinutes: true
+                    )
                     Spacer()
-                    FreeTimeMetric(title: "今月残り", minutes: weekMinutes * 4)
+                    FreeTimeMetric(title: "今月残り", minutes: monthRemainingMinutes)
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -92,6 +103,13 @@ struct StatsView: View {
             total += Int(plan.end.timeIntervalSince(plan.start) / 60)
         }
         return total
+    }
+
+    private func remainingIntervalEnd(for component: Calendar.Component) -> Date {
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2
+        calendar.minimumDaysInFirstWeek = 4
+        return calendar.dateInterval(of: component, for: .now)?.end ?? .now
     }
 }
 
