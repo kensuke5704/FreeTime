@@ -164,28 +164,6 @@ struct TodayOnWidgetView: View {
             }
             .widgetLabel { Text("今日のON予定 \(todayPlans.count)件") }
 
-        case .accessoryRectangular:
-            VStack(alignment: .leading, spacing: 2) {
-                Label("今日のON予定", systemImage: "calendar")
-                    .font(.caption.weight(.semibold))
-
-                if todayPlans.isEmpty {
-                    Text("予定はありません")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.8))
-                } else {
-                    ForEach(Array(todayPlans.prefix(2).enumerated()), id: \.offset) { _, plan in
-                        HStack(spacing: 5) {
-                            Text(plan.start, style: .time)
-                                .fontWeight(.semibold)
-                            Text(plan.title)
-                                .lineLimit(1)
-                        }
-                        .font(.caption)
-                    }
-                }
-            }
-
         case .systemLarge:
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
@@ -244,9 +222,78 @@ struct TodayOnWidget: Widget {
         .supportedFamilies([
             .accessoryInline,
             .accessoryCircular,
-            .accessoryRectangular,
             .systemLarge
         ])
+    }
+}
+
+struct TodayOnRectangularWidgetView: View {
+    let entry: FreeTimeEntry
+    let startIndex: Int
+
+    private var displayedPlans: [WidgetPlanSnapshot] {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: entry.date)
+        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
+        return Array(
+            (entry.snapshot.onPlans ?? [])
+                .filter { $0.start < dayEnd && $0.end > dayStart }
+                .sorted { $0.start < $1.start }
+                .dropFirst(startIndex)
+                .prefix(3)
+        )
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if displayedPlans.isEmpty {
+                Text("予定はありません")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.8))
+            } else {
+                ForEach(Array(displayedPlans.enumerated()), id: \.offset) { _, plan in
+                    HStack(spacing: 6) {
+                        Text(plan.start, style: .time)
+                            .fontWeight(.semibold)
+                            .frame(width: 42, alignment: .leading)
+                        Text(plan.title)
+                            .lineLimit(1)
+                    }
+                    .font(.caption)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+}
+
+struct TodayOnFirstRectangularWidget: Widget {
+    let kind = "TodayOnFirstRectangularWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: FreeTimeProvider()) { entry in
+            TodayOnRectangularWidgetView(entry: entry, startIndex: 0)
+                .foregroundStyle(.white)
+                .containerBackground(Color(.systemGray), for: .widget)
+        }
+        .configurationDisplayName("ON予定 1〜3")
+        .description("今日の1番目から3番目のON予定を表示します。")
+        .supportedFamilies([.accessoryRectangular])
+    }
+}
+
+struct TodayOnSecondRectangularWidget: Widget {
+    let kind = "TodayOnSecondRectangularWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: FreeTimeProvider()) { entry in
+            TodayOnRectangularWidgetView(entry: entry, startIndex: 3)
+                .foregroundStyle(.white)
+                .containerBackground(Color(.systemGray), for: .widget)
+        }
+        .configurationDisplayName("ON予定 4〜6")
+        .description("今日の4番目から6番目のON予定を表示します。")
+        .supportedFamilies([.accessoryRectangular])
     }
 }
 
@@ -255,5 +302,7 @@ struct FreeTimeWidgetBundle: WidgetBundle {
     var body: some Widget {
         FreeTimeWidget()
         TodayOnWidget()
+        TodayOnFirstRectangularWidget()
+        TodayOnSecondRectangularWidget()
     }
 }

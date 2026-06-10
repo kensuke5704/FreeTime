@@ -8,11 +8,13 @@ final class FreeTimeStore: ObservableObject {
     @Published var tasks: [FreeTimeTask] = []
     @Published var templates: [RoutineTemplate] = []
     @Published private(set) var lastAutomaticBackupDate: Date?
+    private var deletedTemplatePlanKeys: Set<String> = []
 
     private struct Payload: Codable {
         var plans: [TimePlan]
         var tasks: [FreeTimeTask]
         var templates: [RoutineTemplate]
+        var deletedTemplatePlanKeys: Set<String>?
     }
 
     private struct BackupEnvelope: Codable {
@@ -36,7 +38,12 @@ final class FreeTimeStore: ObservableObject {
         let envelope = BackupEnvelope(
             version: 1,
             exportedAt: .now,
-            payload: Payload(plans: plans, tasks: tasks, templates: templates)
+            payload: Payload(
+                plans: plans,
+                tasks: tasks,
+                templates: templates,
+                deletedTemplatePlanKeys: deletedTemplatePlanKeys
+            )
         )
         return try JSONEncoder().encode(envelope)
     }
@@ -55,6 +62,7 @@ final class FreeTimeStore: ObservableObject {
         plans = payload.plans
         tasks = payload.tasks
         templates = payload.templates
+        deletedTemplatePlanKeys = payload.deletedTemplatePlanKeys ?? []
         applyAutomaticTemplates()
     }
 
@@ -70,6 +78,9 @@ final class FreeTimeStore: ObservableObject {
     }
 
     func delete(_ plan: TimePlan) {
+        if let key = templatePlanKey(for: plan) {
+            deletedTemplatePlanKeys.insert(key)
+        }
         plans.removeAll { $0.id == plan.id }
         save()
     }
@@ -109,6 +120,9 @@ final class FreeTimeStore: ObservableObject {
 
     func delete(_ template: RoutineTemplate) {
         templates.removeAll { $0.id == template.id }
+        deletedTemplatePlanKeys = deletedTemplatePlanKeys.filter {
+            !$0.hasPrefix("\(template.id.uuidString)|")
+        }
         plans.removeAll {
             $0.sourceTemplateID == template.id && $0.start >= Calendar.current.startOfDay(for: .now)
         }
@@ -200,7 +214,7 @@ final class FreeTimeStore: ObservableObject {
     }
 
     func weekDates(containing date: Date) -> [Date] {
-        let calendar = Calendar.current
+        let calendar = mondayFirstCalendar
         let interval = calendar.dateInterval(of: .weekOfYear, for: date)
         let start = interval?.start ?? calendar.startOfDay(for: date)
         return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
@@ -251,7 +265,7 @@ final class FreeTimeStore: ObservableObject {
     }
 
     private func apply(_ template: RoutineTemplate, replacingExisting: Bool) {
-        let calendar = Calendar.current
+        let calendar = mondayFirstCalendar
         let today = calendar.startOfDay(for: .now)
 
         if replacingExisting {
@@ -279,7 +293,12 @@ final class FreeTimeStore: ObservableObject {
                         && $0.sourceTemplateItemID == item.id
                         && calendar.isDate($0.start, inSameDayAs: day)
                 }
-                guard !alreadyExists else { continue }
+                let deletionKey = templatePlanKey(
+                    templateID: template.id,
+                    itemID: item.id,
+                    date: day
+                )
+                guard !alreadyExists, !deletedTemplatePlanKeys.contains(deletionKey) else { continue }
 
                 plans.append(TimePlan(
                     title: item.title,
@@ -295,7 +314,12 @@ final class FreeTimeStore: ObservableObject {
     }
 
     func save() {
-        let payload = Payload(plans: plans, tasks: tasks, templates: templates)
+        let payload = Payload(
+            plans: plans,
+            tasks: tasks,
+            templates: templates,
+            deletedTemplatePlanKeys: deletedTemplatePlanKeys
+        )
         if let data = try? JSONEncoder().encode(payload) {
             SharedDefaults.defaults.set(data, forKey: SharedDefaults.storeKey)
         }
@@ -311,6 +335,7 @@ final class FreeTimeStore: ObservableObject {
         plans = payload.plans
         tasks = payload.tasks
         templates = payload.templates
+        deletedTemplatePlanKeys = payload.deletedTemplatePlanKeys ?? []
         return true
     }
 
@@ -343,6 +368,7 @@ final class FreeTimeStore: ObservableObject {
         plans = envelope.payload.plans
         tasks = envelope.payload.tasks
         templates = envelope.payload.templates
+        deletedTemplatePlanKeys = envelope.payload.deletedTemplatePlanKeys ?? []
         lastAutomaticBackupDate = envelope.exportedAt
         return true
     }
@@ -426,6 +452,28 @@ final class FreeTimeStore: ObservableObject {
             SharedDefaults.defaults.set(data, forKey: SharedDefaults.snapshotKey)
         }
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    private var mondayFirstCalendar: Calendar {
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2
+        calendar.minimumDaysInFirstWeek = 4
+        return calendar
+    }
+
+    private func templatePlanKey(for plan: TimePlan) -> String? {
+        guard
+            let templateID = plan.sourceTemplateID,
+            let itemID = plan.sourceTemplateItemID
+        else {
+            return nil
+        }
+        return templatePlanKey(templateID: templateID, itemID: itemID, date: plan.start)
+    }
+
+    private func templatePlanKey(templateID: UUID, itemID: UUID, date: Date) -> String {
+        let day = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        return "\(templateID.uuidString)|\(itemID.uuidString)|\(day.year ?? 0)-\(day.month ?? 0)-\(day.day ?? 0)"
     }
 
 }

@@ -3,7 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var store: FreeTimeStore
     @State private var selectedPlan: TimePlan?
-    @State private var showsOffPlans = true
+    @State private var showsOffPlans = false
     let openAdd: () -> Void
 
     private var todayPlans: [TimePlan] { store.plans(on: .now) }

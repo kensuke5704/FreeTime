@@ -50,19 +50,7 @@ struct WeekView: View {
                     ScrollView(.horizontal, showsIndicators: timelineScale > 1) {
                         VStack(spacing: 10) {
                             HStack(spacing: 8) {
-                                Button {
-                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                        timelineScale = timelineScale == 1 ? 3 : 1
-                                    }
-                                } label: {
-                                    Image(systemName: timelineScale == 1
-                                          ? "magnifyingglass"
-                                          : "magnifyingglass.circle.fill")
-                                        .frame(width: 40, height: 24)
-                                }
-                                .buttonStyle(.plain)
-                                .foregroundStyle(.blue)
-                                .accessibilityLabel(timelineScale == 1 ? "3倍に拡大" : "元の大きさに戻す")
+                                Color.clear.frame(width: 40, height: 24)
 
                                 TimelineHourScale(interval: timelineScale == 1 ? 6 : 2)
                                     .frame(width: timelineWidth)
@@ -73,6 +61,22 @@ struct WeekView: View {
                             }
                         }
                         .frame(width: timelineWidth + 48, alignment: .leading)
+                    }
+                    .overlay(alignment: .topLeading) {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                timelineScale = timelineScale == 1 ? 3 : 1
+                            }
+                        } label: {
+                            Image(systemName: timelineScale == 1
+                                  ? "magnifyingglass"
+                                  : "magnifyingglass.circle.fill")
+                                .frame(width: 40, height: 24)
+                                .background(Color(.systemBackground))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.blue)
+                        .accessibilityLabel(timelineScale == 1 ? "3倍に拡大" : "元の大きさに戻す")
                     }
                 }
                 .frame(height: 24 + (68 * 7) + (10 * 7))
