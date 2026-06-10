@@ -11,15 +11,25 @@ struct FreeTimeMetric: View {
     let title: String
     let minutes: Int
     var prominent = false
+    var splitsHoursAndMinutes = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
-            Text(minutes.durationText)
+            if splitsHoursAndMinutes {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("\(minutes / 60)時間")
+                    Text("\(minutes % 60)分")
+                }
                 .font(prominent ? .system(size: 38, weight: .bold, design: .rounded) : .title3.bold())
                 .contentTransition(.numericText())
+            } else {
+                Text(minutes.durationText)
+                    .font(prominent ? .system(size: 38, weight: .bold, design: .rounded) : .title3.bold())
+                    .contentTransition(.numericText())
+            }
         }
     }
 }
@@ -188,10 +198,15 @@ struct DayTimeline: View {
 }
 
 struct FiveMinuteDatePicker: View {
+    enum Mode {
+        case dateAndTime
+        case time
+    }
+
     let title: String
     @Binding var selection: Date
     var range: ClosedRange<Date>?
-    var displayedComponents: UIDatePicker.Mode = .dateAndTime
+    var displayedComponents: Mode = .dateAndTime
 
     var body: some View {
         HStack {
@@ -202,7 +217,7 @@ struct FiveMinuteDatePicker: View {
                 range: range,
                 mode: displayedComponents
             )
-            .fixedSize()
+            .frame(minWidth: displayedComponents == .time ? 92 : 190, minHeight: 34)
         }
     }
 }
@@ -210,7 +225,7 @@ struct FiveMinuteDatePicker: View {
 private struct FiveMinuteDatePickerControl: UIViewRepresentable {
     @Binding var selection: Date
     let range: ClosedRange<Date>?
-    let mode: UIDatePicker.Mode
+    let mode: FiveMinuteDatePicker.Mode
 
     func makeCoordinator() -> Coordinator {
         Coordinator(selection: $selection)
@@ -218,7 +233,6 @@ private struct FiveMinuteDatePickerControl: UIViewRepresentable {
 
     func makeUIView(context: Context) -> UIDatePicker {
         let picker = UIDatePicker()
-        picker.datePickerMode = mode
         picker.preferredDatePickerStyle = .compact
         picker.minuteInterval = 5
         picker.addTarget(
@@ -230,11 +244,19 @@ private struct FiveMinuteDatePickerControl: UIViewRepresentable {
     }
 
     func updateUIView(_ picker: UIDatePicker, context: Context) {
-        picker.datePickerMode = mode
+        picker.datePickerMode = mode == .time ? .time : .dateAndTime
+        picker.minuteInterval = 5
         picker.minimumDate = range?.lowerBound
         picker.maximumDate = range?.upperBound
-        if abs(picker.date.timeIntervalSince(selection)) > 0.5 {
-            picker.setDate(selection, animated: false)
+
+        let roundedSelection = selection.roundedDownToFiveMinutes
+        if selection != roundedSelection {
+            DispatchQueue.main.async {
+                selection = roundedSelection
+            }
+        }
+        if abs(picker.date.timeIntervalSince(roundedSelection)) > 0.5 {
+            picker.setDate(roundedSelection, animated: false)
         }
     }
 
@@ -246,8 +268,22 @@ private struct FiveMinuteDatePickerControl: UIViewRepresentable {
         }
 
         @objc func valueChanged(_ sender: UIDatePicker) {
-            selection = sender.date
+            selection = sender.date.roundedDownToFiveMinutes
         }
+    }
+}
+
+private extension Date {
+    var roundedDownToFiveMinutes: Date {
+        let calendar = Calendar.current
+        let components = calendar.dateComponents(
+            [.year, .month, .day, .hour, .minute],
+            from: self
+        )
+        var rounded = components
+        rounded.minute = ((components.minute ?? 0) / 5) * 5
+        rounded.second = 0
+        return calendar.date(from: rounded) ?? self
     }
 }
 
