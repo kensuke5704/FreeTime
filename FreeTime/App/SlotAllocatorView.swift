@@ -233,17 +233,17 @@ private struct SlotTimeEditorView: View {
                     Text("\(slot.start.shortDateText) \(slot.start.timeText)–\(slot.end.timeText)")
                 }
                 Section("配置する時間") {
-                    DatePicker(
-                        "開始",
+                    FiveMinuteDatePicker(
+                        title: "開始",
                         selection: $start,
-                        in: slot.start...latestStart,
-                        displayedComponents: .hourAndMinute
+                        range: slot.start...latestStart,
+                        displayedComponents: .time
                     )
-                    DatePicker(
-                        "終了",
+                    FiveMinuteDatePicker(
+                        title: "終了",
                         selection: $end,
-                        in: earliestEnd...slot.end,
-                        displayedComponents: .hourAndMinute
+                        range: earliestEnd...slot.end,
+                        displayedComponents: .time
                     )
                 }
                 Section {

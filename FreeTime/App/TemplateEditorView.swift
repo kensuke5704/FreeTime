@@ -197,8 +197,16 @@ private struct TemplateItemEditorView: View {
 
                 Section("時間帯") {
                     TextField("タイトル", text: $title)
-                    DatePicker("開始", selection: $start, displayedComponents: .hourAndMinute)
-                    DatePicker("終了", selection: $end, displayedComponents: .hourAndMinute)
+                    FiveMinuteDatePicker(
+                        title: "開始",
+                        selection: $start,
+                        displayedComponents: .time
+                    )
+                    FiveMinuteDatePicker(
+                        title: "終了",
+                        selection: $end,
+                        displayedComponents: .time
+                    )
                 }
 
                 if kind == .on {

@@ -1,9 +1,9 @@
 import SwiftUI
+import UIKit
 
 enum WeekDisplayMode: String, CaseIterable, Identifiable {
     case all = "すべて"
     case onAndFree = "ON＋空き"
-    case onOnly = "ONのみ"
     var id: String { rawValue }
 }
 
@@ -90,7 +90,6 @@ struct DayTimeline: View {
                     .buttonStyle(.plain)
                     .disabled(onSelectPlan == nil)
                     .offset(x: x, y: y)
-                    .opacity(mode == .onOnly && item.plan.kind == .off ? 0.32 : 1)
                 }
 
                 ForEach(Array(stride(from: hourGridInterval, to: 24, by: hourGridInterval)), id: \.self) { hour in
@@ -185,6 +184,70 @@ struct DayTimeline: View {
         let laneCount: Int
 
         var id: UUID { plan.id }
+    }
+}
+
+struct FiveMinuteDatePicker: View {
+    let title: String
+    @Binding var selection: Date
+    var range: ClosedRange<Date>?
+    var displayedComponents: UIDatePicker.Mode = .dateAndTime
+
+    var body: some View {
+        HStack {
+            Text(title)
+            Spacer()
+            FiveMinuteDatePickerControl(
+                selection: $selection,
+                range: range,
+                mode: displayedComponents
+            )
+            .fixedSize()
+        }
+    }
+}
+
+private struct FiveMinuteDatePickerControl: UIViewRepresentable {
+    @Binding var selection: Date
+    let range: ClosedRange<Date>?
+    let mode: UIDatePicker.Mode
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(selection: $selection)
+    }
+
+    func makeUIView(context: Context) -> UIDatePicker {
+        let picker = UIDatePicker()
+        picker.datePickerMode = mode
+        picker.preferredDatePickerStyle = .compact
+        picker.minuteInterval = 5
+        picker.addTarget(
+            context.coordinator,
+            action: #selector(Coordinator.valueChanged(_:)),
+            for: .valueChanged
+        )
+        return picker
+    }
+
+    func updateUIView(_ picker: UIDatePicker, context: Context) {
+        picker.datePickerMode = mode
+        picker.minimumDate = range?.lowerBound
+        picker.maximumDate = range?.upperBound
+        if abs(picker.date.timeIntervalSince(selection)) > 0.5 {
+            picker.setDate(selection, animated: false)
+        }
+    }
+
+    final class Coordinator: NSObject {
+        @Binding private var selection: Date
+
+        init(selection: Binding<Date>) {
+            _selection = selection
+        }
+
+        @objc func valueChanged(_ sender: UIDatePicker) {
+            selection = sender.date
+        }
     }
 }
 

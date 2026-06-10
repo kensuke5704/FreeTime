@@ -9,7 +9,6 @@ struct TaskEditorView: View {
     @State private var hasDeadline: Bool
     @State private var deadline: Date
     @State private var estimatedMinutes: Int
-    @State private var priority: Int
     @State private var memo: String
     @State private var allocateAfterSave: Bool
     @State private var pendingTask: FreeTimeTask?
@@ -25,7 +24,6 @@ struct TaskEditorView: View {
                 ?? .now
         )
         _estimatedMinutes = State(initialValue: task?.estimatedMinutes ?? 120)
-        _priority = State(initialValue: task?.priority ?? 1)
         _memo = State(initialValue: task?.memo ?? "")
         _allocateAfterSave = State(initialValue: task == nil)
     }
@@ -51,11 +49,6 @@ struct TaskEditorView: View {
                         in: 15...1440,
                         step: 15
                     )
-                    Picker("優先度", selection: $priority) {
-                        Text("低").tag(0)
-                        Text("中").tag(1)
-                        Text("高").tag(2)
-                    }
                 }
                 Section {
                     TextField("メモ（任意）", text: $memo, axis: .vertical)
@@ -79,7 +72,7 @@ struct TaskEditorView: View {
                             deadline: hasDeadline ? deadline : nil,
                             estimatedMinutes: estimatedMinutes,
                             completedMinutes: task?.completedMinutes ?? 0,
-                            priority: priority,
+                            priority: task?.priority ?? 1,
                             memo: memo,
                             isCompleted: task?.isCompleted ?? false
                         )

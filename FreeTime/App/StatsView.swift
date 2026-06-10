@@ -36,9 +36,9 @@ struct StatsView: View {
                 HStack {
                     FreeTimeMetric(title: "今日", minutes: store.freeMinutes(on: .now))
                     Spacer()
-                    FreeTimeMetric(title: "今週", minutes: weekMinutes, prominent: true)
+                    FreeTimeMetric(title: "今週残り", minutes: weekMinutes, prominent: true)
                     Spacer()
-                    FreeTimeMetric(title: "今月", minutes: weekMinutes * 4)
+                    FreeTimeMetric(title: "今月残り", minutes: weekMinutes * 4)
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -79,12 +79,6 @@ struct StatsView: View {
                     BreakdownRow(title: "OFF", minutes: offMinutes, color: Color(.darkGray))
                 }
 
-                Label("土日は平日より使える時間が多い傾向です", systemImage: "lightbulb")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
             }
             .padding()
         }

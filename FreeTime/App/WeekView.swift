@@ -47,37 +47,54 @@ struct WeekView: View {
                     let baseTimelineWidth = max(280, geometry.size.width - 48)
                     let timelineWidth = baseTimelineWidth * timelineScale
 
-                    ScrollView(.horizontal, showsIndicators: timelineScale > 1) {
+                    HStack(spacing: 8) {
                         VStack(spacing: 10) {
-                            HStack(spacing: 8) {
-                                Color.clear.frame(width: 40, height: 24)
-
-                                TimelineHourScale(interval: timelineScale == 1 ? 6 : 2)
-                                    .frame(width: timelineWidth)
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    timelineScale = timelineScale == 1 ? 3 : 1
+                                }
+                            } label: {
+                                Image(systemName: timelineScale == 1
+                                      ? "magnifyingglass"
+                                      : "magnifyingglass.circle.fill")
+                                    .frame(width: 40, height: 24)
+                                    .background(Color(.systemBackground))
                             }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.blue)
+                            .accessibilityLabel(timelineScale == 1 ? "3倍に拡大" : "元の大きさに戻す")
 
                             ForEach(dates, id: \.self) { date in
-                                weekRow(date, timelineWidth: timelineWidth)
+                                dateCell(date)
                             }
                         }
-                        .frame(width: timelineWidth + 48, alignment: .leading)
-                    }
-                    .overlay(alignment: .topLeading) {
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                timelineScale = timelineScale == 1 ? 3 : 1
+                        .frame(width: 40)
+
+                        ScrollView(.horizontal, showsIndicators: timelineScale > 1) {
+                            VStack(spacing: 10) {
+                                TimelineHourScale(interval: timelineScale == 1 ? 6 : 2)
+                                    .frame(width: timelineWidth)
+
+                                ForEach(dates, id: \.self) { date in
+                                    timelineRow(date, timelineWidth: timelineWidth)
+                                }
                             }
-                        } label: {
-                            Image(systemName: timelineScale == 1
-                                  ? "magnifyingglass"
-                                  : "magnifyingglass.circle.fill")
-                                .frame(width: 40, height: 24)
-                                .background(Color(.systemBackground))
+                            .frame(width: timelineWidth, alignment: .leading)
                         }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.blue)
-                        .accessibilityLabel(timelineScale == 1 ? "3倍に拡大" : "元の大きさに戻す")
+                        .scrollDisabled(timelineScale == 1)
                     }
+                    .contentShape(Rectangle())
+                    .simultaneousGesture(
+                        DragGesture(minimumDistance: 40)
+                            .onEnded { value in
+                                guard timelineScale == 1 else { return }
+                                if value.translation.width < -50 {
+                                    moveWeek(by: 1)
+                                } else if value.translation.width > 50 {
+                                    moveWeek(by: -1)
+                                }
+                            }
+                    )
                 }
                 .frame(height: 24 + (68 * 7) + (10 * 7))
 
@@ -102,7 +119,23 @@ struct WeekView: View {
         }
     }
 
-    private func weekRow(_ date: Date, timelineWidth: CGFloat) -> some View {
+    private func dateCell(_ date: Date) -> some View {
+        NavigationLink {
+            DayPlansView(date: date)
+        } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(date.weekday3Text)
+                    .font(.caption.weight(.semibold))
+                Text(date.formatted(.dateTime.day()))
+                    .font(.headline.monospacedDigit())
+                    .foregroundStyle(Calendar.current.isDateInToday(date) ? .blue : .primary)
+            }
+            .frame(width: 40, height: 68, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func timelineRow(_ date: Date, timelineWidth: CGFloat) -> some View {
         let task = store.tasks
             .filter {
                 guard let deadline = $0.deadline else { return false }
@@ -111,46 +144,30 @@ struct WeekView: View {
             .sorted { $0.deadlineSortValue < $1.deadlineSortValue }
             .first
 
-        return HStack(spacing: 8) {
-            NavigationLink {
-                DayPlansView(date: date)
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(date.weekday3Text)
-                        .font(.caption.weight(.semibold))
-                    Text(date.formatted(.dateTime.day()))
-                        .font(.headline.monospacedDigit())
-                        .foregroundStyle(Calendar.current.isDateInToday(date) ? .blue : .primary)
-                }
-                .frame(width: 40, alignment: .leading)
+        return VStack(alignment: .leading, spacing: 4) {
+            if let task {
+                Label(task.title, systemImage: "flag.fill")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle((task.deadline?.timeIntervalSinceNow ?? .infinity) < 86_400 ? .red : .orange)
+                    .lineLimit(1)
             }
-            .buttonStyle(.plain)
-
-            VStack(alignment: .leading, spacing: 4) {
-                if let task {
-                    Label(task.title, systemImage: "flag.fill")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle((task.deadline?.timeIntervalSinceNow ?? .infinity) < 86_400 ? .red : .orange)
-                        .lineLimit(1)
-                }
-                DayTimeline(
-                    date: date,
-                    plans: store.plans(on: date),
-                    mode: displayMode,
-                    hourGridInterval: timelineScale == 1 ? 6 : 2
-                ) { plan in
-                    selectedPlan = plan
-                }
-                .frame(width: timelineWidth, height: 48)
+            DayTimeline(
+                date: date,
+                plans: store.plans(on: date),
+                mode: displayMode,
+                hourGridInterval: timelineScale == 1 ? 6 : 2
+            ) { plan in
+                selectedPlan = plan
             }
-            .padding(.vertical, 4)
-            .background {
-                if Calendar.current.isDateInToday(date) {
-                    RoundedRectangle(cornerRadius: 9).fill(Color.blue.opacity(0.06))
-                }
+            .frame(width: timelineWidth, height: 48)
+        }
+        .padding(.vertical, 4)
+        .background {
+            if Calendar.current.isDateInToday(date) {
+                RoundedRectangle(cornerRadius: 9).fill(Color.blue.opacity(0.06))
             }
         }
-        .frame(height: 68)
+        .frame(width: timelineWidth, height: 68, alignment: .leading)
     }
 
     private var legend: some View {
@@ -170,5 +187,11 @@ struct WeekView: View {
     private var weekRangeText: String {
         guard let first = dates.first, let last = dates.last else { return "" }
         return "\(first.formatted(.dateTime.month().day()))–\(last.formatted(.dateTime.month().day()))"
+    }
+
+    private func moveWeek(by value: Int) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            anchor = Calendar.current.date(byAdding: .weekOfYear, value: value, to: anchor) ?? anchor
+        }
     }
 }

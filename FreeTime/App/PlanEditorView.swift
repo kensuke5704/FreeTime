@@ -38,8 +38,12 @@ struct PlanEditorView: View {
 
                 Section("予定") {
                     TextField("タイトル", text: $title)
-                    DatePicker("開始", selection: $start)
-                    DatePicker("終了", selection: $end, in: start...)
+                    FiveMinuteDatePicker(title: "開始", selection: $start)
+                    FiveMinuteDatePicker(
+                        title: "終了",
+                        selection: $end,
+                        range: start...Date.distantFuture
+                    )
                 }
 
                 if kind == .on {
