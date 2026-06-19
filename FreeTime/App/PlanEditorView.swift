@@ -196,7 +196,7 @@ struct PlanColorSelector: View {
                         selection = color
                     } label: {
                         Circle()
-                            .fill(color.swiftUIColor)
+                            .fill(color.swiftUIColor.opacity(0.85))
                             .frame(width: 30, height: 30)
                             .overlay {
                                 if selection == color {
