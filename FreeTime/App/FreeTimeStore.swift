@@ -9,6 +9,7 @@ final class FreeTimeStore: ObservableObject {
     @Published var templates: [RoutineTemplate] = []
     @Published private(set) var lastAutomaticBackupDate: Date?
     private var deletedTemplatePlanKeys: Set<String> = []
+    private let taskColorMigrationKey = "taskColorMigrationV1"
 
     private struct Payload: Codable {
         var plans: [TimePlan]
@@ -30,6 +31,7 @@ final class FreeTimeStore: ObservableObject {
         if !load(), !loadLatestAutomaticBackup() {
             save()
         } else {
+            migrateLegacyTaskColorsIfNeeded()
             applyAutomaticTemplates()
         }
     }
@@ -60,6 +62,7 @@ final class FreeTimeStore: ObservableObject {
         tasks = payload.tasks
         templates = payload.templates
         deletedTemplatePlanKeys = payload.deletedTemplatePlanKeys ?? []
+        redistributeTaskColorsIfNeeded()
         applyAutomaticTemplates()
     }
 
@@ -84,6 +87,30 @@ final class FreeTimeStore: ObservableObject {
         return PlanColor.allCases.min {
             counts[$0, default: 0] < counts[$1, default: 0]
         } ?? .blue
+    }
+
+    private func migrateLegacyTaskColorsIfNeeded() {
+        guard !SharedDefaults.defaults.bool(forKey: taskColorMigrationKey) else { return }
+        redistributeTaskColorsIfNeeded()
+        SharedDefaults.defaults.set(true, forKey: taskColorMigrationKey)
+    }
+
+    private func redistributeTaskColorsIfNeeded() {
+        let activeIndices = tasks.indices.filter { !tasks[$0].isCompleted }
+        guard activeIndices.count > 1 else { return }
+        let activeColors = Set(activeIndices.map { tasks[$0].color })
+        guard activeColors.count == 1 else { return }
+
+        for (offset, taskIndex) in activeIndices.enumerated() {
+            tasks[taskIndex].color = PlanColor.allCases[offset % PlanColor.allCases.count]
+        }
+        for planIndex in plans.indices {
+            guard
+                let taskID = plans[planIndex].taskID,
+                let task = tasks.first(where: { $0.id == taskID })
+            else { continue }
+            plans[planIndex].color = task.color
+        }
     }
 
     func update(_ task: FreeTimeTask) {

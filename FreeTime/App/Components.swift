@@ -346,11 +346,13 @@ struct TaskRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                Circle()
-                    .fill(task.color.swiftUIColor)
-                    .frame(width: 10, height: 10)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(task.title).font(.body.weight(.semibold))
+                    HStack(spacing: 7) {
+                        Circle()
+                            .fill(task.color.swiftUIColor)
+                            .frame(width: 11, height: 11)
+                        Text(task.title).font(.body.weight(.semibold))
+                    }
                     Text("\(task.category) ・ 残り\(remainingMinutes.durationText)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
