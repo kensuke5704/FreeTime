@@ -73,6 +73,7 @@ struct TaskEditorView: View {
                             estimatedMinutes: estimatedMinutes,
                             completedMinutes: task?.completedMinutes ?? 0,
                             priority: task?.priority ?? 1,
+                            color: task?.color ?? store.nextAvailableTaskColor(),
                             memo: memo,
                             isCompleted: task?.isCompleted ?? false
                         )

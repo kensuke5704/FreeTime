@@ -9,6 +9,7 @@ enum PlanKind: String, Codable, CaseIterable, Identifiable {
 
 enum PlanColor: String, Codable, CaseIterable, Identifiable {
     case blue, green, orange, purple
+    case red, pink, yellow, teal, cyan, indigo, mint, brown
 
     var id: String { rawValue }
 }
@@ -34,8 +35,66 @@ struct FreeTimeTask: Identifiable, Codable, Hashable {
     var estimatedMinutes: Int
     var completedMinutes: Int = 0
     var priority: Int = 1
+    var color: PlanColor = .blue
     var memo = ""
     var isCompleted = false
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        category: String,
+        deadline: Date?,
+        estimatedMinutes: Int,
+        completedMinutes: Int = 0,
+        priority: Int = 1,
+        color: PlanColor = .blue,
+        memo: String = "",
+        isCompleted: Bool = false
+    ) {
+        self.id = id
+        self.title = title
+        self.category = category
+        self.deadline = deadline
+        self.estimatedMinutes = estimatedMinutes
+        self.completedMinutes = completedMinutes
+        self.priority = priority
+        self.color = color
+        self.memo = memo
+        self.isCompleted = isCompleted
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, category, deadline, estimatedMinutes, completedMinutes
+        case priority, color, memo, isCompleted
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        title = try container.decode(String.self, forKey: .title)
+        category = try container.decode(String.self, forKey: .category)
+        deadline = try container.decodeIfPresent(Date.self, forKey: .deadline)
+        estimatedMinutes = try container.decode(Int.self, forKey: .estimatedMinutes)
+        completedMinutes = try container.decodeIfPresent(Int.self, forKey: .completedMinutes) ?? 0
+        priority = try container.decodeIfPresent(Int.self, forKey: .priority) ?? 1
+        color = try container.decodeIfPresent(PlanColor.self, forKey: .color) ?? .blue
+        memo = try container.decodeIfPresent(String.self, forKey: .memo) ?? ""
+        isCompleted = try container.decodeIfPresent(Bool.self, forKey: .isCompleted) ?? false
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(category, forKey: .category)
+        try container.encodeIfPresent(deadline, forKey: .deadline)
+        try container.encode(estimatedMinutes, forKey: .estimatedMinutes)
+        try container.encode(completedMinutes, forKey: .completedMinutes)
+        try container.encode(priority, forKey: .priority)
+        try container.encode(color, forKey: .color)
+        try container.encode(memo, forKey: .memo)
+        try container.encode(isCompleted, forKey: .isCompleted)
+    }
 
     var remainingMinutes: Int {
         max(0, estimatedMinutes - completedMinutes)

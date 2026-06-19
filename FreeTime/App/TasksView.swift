@@ -125,6 +125,7 @@ struct TaskDetailView: View {
                                 value: Double(progressMinutes),
                                 total: Double(max(1, task.estimatedMinutes))
                             )
+                            .tint(task.color.swiftUIColor)
 
                             if scheduledMinutes > 0, !task.isCompleted {
                                 Text("配置済み \(scheduledMinutes.durationText)")

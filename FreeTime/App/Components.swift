@@ -346,6 +346,9 @@ struct TaskRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
+                Circle()
+                    .fill(task.color.swiftUIColor)
+                    .frame(width: 10, height: 10)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(task.title).font(.body.weight(.semibold))
                     Text("\(task.category) ・ 残り\(remainingMinutes.durationText)")
@@ -358,7 +361,7 @@ struct TaskRow: View {
                     .foregroundStyle(urgencyColor)
             }
             ProgressView(value: Double(progressMinutes), total: Double(max(1, task.estimatedMinutes)))
-                .tint(urgencyColor)
+                .tint(task.color.swiftUIColor)
         }
         .padding(.vertical, 5)
     }

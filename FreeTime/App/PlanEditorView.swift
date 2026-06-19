@@ -41,6 +41,10 @@ struct PlanEditorView: View {
             }
     }
 
+    private var selectedTask: FreeTimeTask? {
+        store.tasks.first { $0.id == taskID }
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -73,6 +77,7 @@ struct PlanEditorView: View {
                                 return
                             }
                             title = task.title
+                            color = task.color
                         }
 
                         if taskID != nil {
@@ -93,6 +98,12 @@ struct PlanEditorView: View {
                 if kind == .on {
                     Section("ONの設定") {
                         PlanColorSelector(selection: $color)
+                            .disabled(selectedTask != nil)
+                        if let selectedTask {
+                            Text("課題の色（\(selectedTask.color.accessibilityName)）を使用します。")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                         TextField("メモ（任意）", text: $memo, axis: .vertical)
                     }
                 }
@@ -128,7 +139,7 @@ struct PlanEditorView: View {
                             start: start,
                             end: end,
                             kind: kind,
-                            color: color,
+                            color: selectedTask?.color ?? color,
                             memo: memo,
                             taskID: kind == .on ? taskID : nil,
                             sourceTemplateID: plan?.sourceTemplateID,
@@ -177,31 +188,32 @@ struct PlanColorSelector: View {
     @Binding var selection: PlanColor
 
     var body: some View {
-        HStack {
+        VStack(alignment: .leading, spacing: 12) {
             Text("色")
-            Spacer()
-            ForEach(PlanColor.allCases) { color in
-                Button {
-                    selection = color
-                } label: {
-                    Circle()
-                        .fill(color.swiftUIColor)
-                        .frame(width: 28, height: 28)
-                        .overlay {
-                            if selection == color {
-                                Image(systemName: "checkmark")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(.white)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 14) {
+                ForEach(PlanColor.allCases) { color in
+                    Button {
+                        selection = color
+                    } label: {
+                        Circle()
+                            .fill(color.swiftUIColor)
+                            .frame(width: 30, height: 30)
+                            .overlay {
+                                if selection == color {
+                                    Image(systemName: "checkmark")
+                                        .font(.caption.bold())
+                                        .foregroundStyle(.white)
+                                }
                             }
-                        }
-                        .overlay {
-                            Circle()
-                                .stroke(selection == color ? Color.primary : Color.clear, lineWidth: 2)
-                                .padding(-3)
-                        }
+                            .overlay {
+                                Circle()
+                                    .stroke(selection == color ? Color.primary : Color.clear, lineWidth: 2)
+                                    .padding(-3)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(color.accessibilityName)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(color.accessibilityName)
             }
         }
     }

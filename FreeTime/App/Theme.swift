@@ -7,6 +7,14 @@ extension PlanColor {
         case .green: .green
         case .orange: .orange
         case .purple: .purple
+        case .red: .red
+        case .pink: .pink
+        case .yellow: .yellow
+        case .teal: .teal
+        case .cyan: .cyan
+        case .indigo: .indigo
+        case .mint: .mint
+        case .brown: .brown
         }
     }
 
@@ -16,6 +24,14 @@ extension PlanColor {
         case .green: "緑"
         case .orange: "オレンジ"
         case .purple: "紫"
+        case .red: "赤"
+        case .pink: "ピンク"
+        case .yellow: "黄"
+        case .teal: "ティール"
+        case .cyan: "シアン"
+        case .indigo: "インディゴ"
+        case .mint: "ミント"
+        case .brown: "茶"
         }
     }
 }

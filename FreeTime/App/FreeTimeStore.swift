@@ -75,11 +75,23 @@ final class FreeTimeStore: ObservableObject {
         save()
     }
     func add(_ task: FreeTimeTask) { tasks.append(task); save() }
+    func nextAvailableTaskColor() -> PlanColor {
+        let activeColors = tasks.filter { !$0.isCompleted }.map(\.color)
+        if let unused = PlanColor.allCases.first(where: { !activeColors.contains($0) }) {
+            return unused
+        }
+        let counts = Dictionary(grouping: activeColors, by: { $0 }).mapValues(\.count)
+        return PlanColor.allCases.min {
+            counts[$0, default: 0] < counts[$1, default: 0]
+        } ?? .blue
+    }
+
     func update(_ task: FreeTimeTask) {
         guard let index = tasks.firstIndex(where: { $0.id == task.id }) else { return }
         tasks[index] = task
         for planIndex in plans.indices where plans[planIndex].taskID == task.id {
             plans[planIndex].title = task.title
+            plans[planIndex].color = task.color
         }
         save()
     }
@@ -120,7 +132,7 @@ final class FreeTimeStore: ObservableObject {
                 start: interval.start,
                 end: interval.end,
                 kind: .on,
-                color: .blue,
+                color: task.color,
                 taskID: task.id
             ))
         }
