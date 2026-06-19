@@ -10,6 +10,7 @@ struct PlanEditorView: View {
     @State private var end: Date
     @State private var color: PlanColor
     @State private var memo: String
+    @State private var taskID: UUID?
     @State private var confirmsDeletion = false
 
     init(plan: TimePlan? = nil, initialDate: Date? = nil) {
@@ -26,6 +27,18 @@ struct PlanEditorView: View {
         _end = State(initialValue: plan?.end ?? initialEnd)
         _color = State(initialValue: plan?.color ?? .blue)
         _memo = State(initialValue: plan?.memo ?? "")
+        _taskID = State(initialValue: plan?.taskID)
+    }
+
+    private var selectableTasks: [FreeTimeTask] {
+        store.tasks
+            .filter { !$0.isCompleted || $0.id == taskID }
+            .sorted {
+                if $0.deadlineSortValue != $1.deadlineSortValue {
+                    return $0.deadlineSortValue < $1.deadlineSortValue
+                }
+                return $0.title.localizedStandardCompare($1.title) == .orderedAscending
+            }
     }
 
     var body: some View {
@@ -37,7 +50,38 @@ struct PlanEditorView: View {
                 .pickerStyle(.segmented)
 
                 Section("予定") {
-                    TextField("タイトル", text: $title)
+                    TextField("タイトル", text: Binding(
+                        get: { title },
+                        set: { newTitle in
+                            title = newTitle
+                            if let selectedTask = store.tasks.first(where: { $0.id == taskID }),
+                               newTitle != selectedTask.title {
+                                taskID = nil
+                            }
+                        }
+                    ))
+
+                    if kind == .on, !selectableTasks.isEmpty {
+                        Picker("未完了の課題から選ぶ", selection: $taskID) {
+                            Text("選択しない").tag(nil as UUID?)
+                            ForEach(selectableTasks) { task in
+                                Text(task.title).tag(task.id as UUID?)
+                            }
+                        }
+                        .onChange(of: taskID) { _, newTaskID in
+                            guard let task = store.tasks.first(where: { $0.id == newTaskID }) else {
+                                return
+                            }
+                            title = task.title
+                        }
+
+                        if taskID != nil {
+                            Text("この予定の時間は、選択した課題の配置済み時間に反映されます。")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
                     FiveMinuteDatePicker(title: "開始", selection: $start)
                     FiveMinuteDatePicker(
                         title: "終了",
@@ -86,7 +130,7 @@ struct PlanEditorView: View {
                             kind: kind,
                             color: color,
                             memo: memo,
-                            taskID: plan?.taskID,
+                            taskID: kind == .on ? taskID : nil,
                             sourceTemplateID: plan?.sourceTemplateID,
                             sourceTemplateItemID: plan?.sourceTemplateItemID
                         )
