@@ -195,8 +195,12 @@ struct PlanColorSelector: View {
                     Button {
                         selection = color
                     } label: {
-                        Circle()
-                            .fill(color.swiftUIColor.opacity(0.85))
+                        ZStack {
+                            Circle()
+                                .fill(Color.white)
+                            Circle()
+                                .fill(color.swiftUIColor.opacity(0.85))
+                        }
                             .frame(width: 30, height: 30)
                             .overlay {
                                 if selection == color {
