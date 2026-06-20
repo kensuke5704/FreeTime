@@ -13,17 +13,17 @@ struct PlanEditorView: View {
     @State private var taskID: UUID?
     @State private var confirmsDeletion = false
 
-    init(plan: TimePlan? = nil, initialDate: Date? = nil) {
-        let initialStart = initialDate.flatMap {
+    init(plan: TimePlan? = nil, initialDate: Date? = nil, initialStart: Date? = nil) {
+        let defaultStart = initialStart ?? initialDate.flatMap {
             Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: $0)
         } ?? .today(hour: 18)
-        let initialEnd = Calendar.current.date(byAdding: .hour, value: 1, to: initialStart)
+        let initialEnd = Calendar.current.date(byAdding: .hour, value: 1, to: defaultStart)
             ?? .today(hour: 19)
 
         self.plan = plan
         _title = State(initialValue: plan?.title ?? "")
         _kind = State(initialValue: plan?.kind ?? .on)
-        _start = State(initialValue: plan?.start ?? initialStart)
+        _start = State(initialValue: plan?.start ?? defaultStart)
         _end = State(initialValue: plan?.end ?? initialEnd)
         _color = State(initialValue: plan?.color ?? .blue)
         _memo = State(initialValue: plan?.memo ?? "")

@@ -4,6 +4,8 @@ struct DayPlansView: View {
     @EnvironmentObject private var store: FreeTimeStore
     @State private var selectedPlan: TimePlan?
     @State private var isAddingPlan = false
+    @State private var addInitialStart = Date.now
+    @State private var isAddingFromTimeline = false
     let date: Date
 
     private var plans: [TimePlan] {
@@ -13,9 +15,17 @@ struct DayPlansView: View {
     var body: some View {
         List {
             Section {
-                DayTimeline(date: date, plans: plans) { plan in
-                    selectedPlan = plan
-                }
+                DayTimeline(
+                    date: date,
+                    plans: plans,
+                    onSelectPlan: { plan in
+                        selectedPlan = plan
+                    },
+                    onSelectEmptyTime: { date in
+                        addInitialStart = date
+                        isAddingFromTimeline = true
+                    }
+                )
                     .frame(height: 64)
                     .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
             }
@@ -70,6 +80,9 @@ struct DayPlansView: View {
         }
         .sheet(isPresented: $isAddingPlan) {
             PlanEditorView(initialDate: date)
+        }
+        .sheet(isPresented: $isAddingFromTimeline) {
+            PlanEditorView(initialStart: addInitialStart)
         }
     }
 }

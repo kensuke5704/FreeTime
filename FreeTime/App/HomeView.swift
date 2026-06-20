@@ -3,6 +3,8 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var store: FreeTimeStore
     @State private var selectedPlan: TimePlan?
+    @State private var addInitialStart = Date.now
+    @State private var isAddingFromTimeline = false
     @State private var showsOffPlans = false
     let openAdd: () -> Void
 
@@ -40,9 +42,17 @@ struct HomeView: View {
                     Text("今日")
                         .font(.headline)
                     TimelineHourScale()
-                    DayTimeline(date: .now, plans: todayPlans) { plan in
-                        selectedPlan = plan
-                    }
+                    DayTimeline(
+                        date: .now,
+                        plans: todayPlans,
+                        onSelectPlan: { plan in
+                            selectedPlan = plan
+                        },
+                        onSelectEmptyTime: { date in
+                            addInitialStart = date
+                            isAddingFromTimeline = true
+                        }
+                    )
                         .frame(height: 54)
                 }
 
@@ -136,6 +146,9 @@ struct HomeView: View {
         }
         .sheet(item: $selectedPlan) { plan in
             PlanEditorView(plan: plan)
+        }
+        .sheet(isPresented: $isAddingFromTimeline) {
+            PlanEditorView(initialStart: addInitialStart)
         }
     }
 }

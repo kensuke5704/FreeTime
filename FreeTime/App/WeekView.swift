@@ -5,6 +5,8 @@ struct WeekView: View {
     @State private var anchor = Date.now
     @State private var displayMode: WeekDisplayMode = .all
     @State private var selectedPlan: TimePlan?
+    @State private var addInitialStart = Date.now
+    @State private var isAddingFromTimeline = false
     @State private var timelineScale: CGFloat = 1
     let openAdd: () -> Void
 
@@ -117,6 +119,9 @@ struct WeekView: View {
         .sheet(item: $selectedPlan) { plan in
             PlanEditorView(plan: plan)
         }
+        .sheet(isPresented: $isAddingFromTimeline) {
+            PlanEditorView(initialStart: addInitialStart)
+        }
     }
 
     private func dateCell(_ date: Date) -> some View {
@@ -155,10 +160,15 @@ struct WeekView: View {
                 date: date,
                 plans: store.plans(on: date),
                 mode: displayMode,
-                hourGridInterval: timelineScale == 1 ? 6 : 2
-            ) { plan in
-                selectedPlan = plan
-            }
+                hourGridInterval: timelineScale == 1 ? 6 : 2,
+                onSelectPlan: { plan in
+                    selectedPlan = plan
+                },
+                onSelectEmptyTime: { date in
+                    addInitialStart = date
+                    isAddingFromTimeline = true
+                }
+            )
             .frame(width: timelineWidth, height: 48)
         }
         .padding(.vertical, 4)

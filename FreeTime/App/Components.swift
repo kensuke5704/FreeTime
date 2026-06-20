@@ -41,6 +41,7 @@ struct DayTimeline: View {
     var showLabels = true
     var hourGridInterval = 6
     var onSelectPlan: ((TimePlan) -> Void)?
+    var onSelectEmptyTime: ((Date) -> Void)?
 
     private let calendar = Calendar.current
 
@@ -52,6 +53,23 @@ struct DayTimeline: View {
                     .overlay {
                         RoundedRectangle(cornerRadius: 6)
                             .stroke(Color(.separator), lineWidth: 0.5)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture(coordinateSpace: .local) { location in
+                        guard let onSelectEmptyTime, geometry.size.width > 0 else { return }
+                        let fraction = min(1, max(0, location.x / geometry.size.width))
+                        let minute = min(1435, Int((fraction * 1440) / 5) * 5)
+                        let dayStart = calendar.startOfDay(for: date)
+                        if let selectedDate = calendar.date(
+                            byAdding: .minute,
+                            value: minute,
+                            to: dayStart
+                        ) {
+                            guard !plans.contains(where: {
+                                selectedDate >= $0.start && selectedDate < $0.end
+                            }) else { return }
+                            onSelectEmptyTime(selectedDate)
+                        }
                     }
 
                 ForEach(timelineItems) { item in
