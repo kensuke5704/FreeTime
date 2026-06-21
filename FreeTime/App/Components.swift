@@ -68,7 +68,7 @@ struct DayTimeline: View {
                             guard !plans.contains(where: {
                                 selectedDate >= $0.start && selectedDate < $0.end
                             }) else { return }
-                            onSelectEmptyTime(selectedDate)
+                            onSelectEmptyTime(startOfFreeInterval(containing: selectedDate))
                         }
                     }
 
@@ -132,6 +132,14 @@ struct DayTimeline: View {
 
     private func minutesSinceDayStart(_ date: Date, dayStart: Date) -> Int {
         max(0, min(1440, Int(date.timeIntervalSince(dayStart) / 60)))
+    }
+
+    private func startOfFreeInterval(containing selectedDate: Date) -> Date {
+        let dayStart = calendar.startOfDay(for: date)
+        return plans
+            .filter { $0.end > dayStart && $0.end <= selectedDate }
+            .map(\.end)
+            .max() ?? dayStart
     }
 
     private var timelineItems: [TimelineItem] {
