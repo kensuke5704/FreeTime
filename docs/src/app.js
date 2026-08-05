@@ -31,7 +31,14 @@ let modal = null;
 let today = startOfDay(new Date());
 let googleSync = {
   accessToken: null,
-  fileId: null
+  fileId: null,
+  autoEnabled: false,
+  isSaving: false,
+  pendingSave: false,
+  saveTimer: null,
+  lastSyncedState: "",
+  status: "signed-out",
+  statusMessage: "Google未接続"
 };
 
 function uuid() {
@@ -75,8 +82,56 @@ function seedState() {
   };
 }
 
-function saveState() {
+function saveState({ sync = true } = {}) {
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  if (sync) {
+    scheduleAutoGoogleSync();
+  }
+}
+
+function scheduleAutoGoogleSync() {
+  if (!googleSync.autoEnabled || !googleSync.accessToken) return;
+  clearTimeout(googleSync.saveTimer);
+  googleSync.pendingSave = true;
+  googleSync.saveTimer = setTimeout(() => {
+    autoSaveToGoogle();
+  }, 900);
+}
+
+async function autoSaveToGoogle() {
+  if (!googleSync.autoEnabled || !googleSync.accessToken) return;
+  const snapshot = JSON.stringify(state);
+  if (snapshot === googleSync.lastSyncedState) {
+    googleSync.pendingSave = false;
+    updateGoogleSyncStatus();
+    return;
+  }
+  if (googleSync.isSaving) {
+    googleSync.pendingSave = true;
+    return;
+  }
+
+  googleSync.isSaving = true;
+  googleSync.pendingSave = false;
+  setGoogleSyncStatus("saving", "Googleへ保存中");
+
+  try {
+    await saveToGoogleSyncFile({ interactive: false });
+    googleSync.lastSyncedState = snapshot;
+    setGoogleSyncStatus("saved", "Googleへ保存済み");
+  } catch (error) {
+    console.error(error);
+    googleSync.autoEnabled = false;
+    googleSync.accessToken = null;
+    setGoogleSyncStatus("error", "再ログインが必要");
+  } finally {
+    googleSync.isSaving = false;
+    if (googleSync.pendingSave) {
+      scheduleAutoGoogleSync();
+    } else {
+      updateGoogleSyncStatus();
+    }
+  }
 }
 
 function makePlan(title, start, end, kind = "on", color = "blue", memo = "", taskID = null) {
@@ -292,7 +347,10 @@ function render() {
             <h2>${currentViewTitle()}</h2>
           </div>
           <div class="top-actions">
-            <button class="button sync-button" data-action="google-sync">Google同期</button>
+            <div class="sync-cluster">
+              <button class="button sync-button" data-action="google-sync">Google同期</button>
+              ${renderGoogleSyncStatus()}
+            </div>
             <label class="button import-button">
               読み込み
               <input type="file" accept="application/json,.json" data-action="import" hidden />
@@ -309,6 +367,16 @@ function render() {
     <div class="toast" id="toast"></div>
   `;
   bindEvents();
+  updateGoogleSyncStatus();
+}
+
+function renderGoogleSyncStatus() {
+  return `
+    <div class="sync-status ${googleSync.status}" data-google-sync-status>
+      <span class="sync-dot" aria-hidden="true"></span>
+      <span data-google-sync-label>${escapeHtml(googleSync.statusMessage)}</span>
+    </div>
+  `;
 }
 
 function currentViewTitle() {
@@ -977,6 +1045,7 @@ async function syncWithGoogle() {
   }
 
   try {
+    setGoogleSyncStatus("saving", "Googleに接続中");
     await ensureGoogleAccessToken();
     const file = await findGoogleSyncFile();
     googleSync.fileId = file?.id ?? null;
@@ -990,15 +1059,54 @@ async function syncWithGoogle() {
         await saveToGoogleSyncFile();
         toast("Googleへ保存しました");
       }
+      enableAutoGoogleSync();
       return;
     }
 
     await saveToGoogleSyncFile();
+    enableAutoGoogleSync();
     toast("Googleへ保存しました");
   } catch (error) {
     console.error(error);
+    googleSync.autoEnabled = false;
+    setGoogleSyncStatus("error", "Google同期に失敗");
     toast(error.message?.includes("Googleアカウントが違います") ? "指定したGoogleアカウントでログインしてください" : "Google同期に失敗しました");
   }
+}
+
+function enableAutoGoogleSync() {
+  googleSync.autoEnabled = true;
+  googleSync.lastSyncedState = JSON.stringify(state);
+  setGoogleSyncStatus("saved", "Googleへ保存済み");
+}
+
+function setGoogleSyncStatus(status, message) {
+  googleSync.status = status;
+  googleSync.statusMessage = message;
+  updateGoogleSyncStatus();
+}
+
+function updateGoogleSyncStatus() {
+  const el = document.querySelector("[data-google-sync-status]");
+  if (!el) return;
+  const label = el.querySelector("[data-google-sync-label]");
+  const email = googleAccountEmail();
+  let status = googleSync.status;
+  let message = googleSync.statusMessage;
+
+  if (googleSync.isSaving) {
+    status = "saving";
+    message = "Googleへ保存中";
+  } else if (googleSync.autoEnabled && googleSync.accessToken) {
+    status = "signed-in";
+    message = email ? `${email} で同期中` : "Googleログイン中";
+  } else if (!googleSync.accessToken && googleSync.status !== "error") {
+    status = "signed-out";
+    message = email ? "Google再ログイン待ち" : "Google未接続";
+  }
+
+  el.className = `sync-status ${status}`;
+  if (label) label.textContent = message;
 }
 
 function ensureGoogleClientId() {
@@ -1123,11 +1231,11 @@ async function loadFromGoogleSyncFile(fileId) {
   const response = await googleFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
   const json = await response.json();
   state = normalizeImportedState(json.state ?? json);
-  saveState();
+  saveState({ sync: false });
   render();
 }
 
-async function saveToGoogleSyncFile() {
+async function saveToGoogleSyncFile({ interactive = true } = {}) {
   const payload = JSON.stringify({
     app: "FreeTime",
     version: 1,
@@ -1140,7 +1248,7 @@ async function saveToGoogleSyncFile() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: payload
-    });
+    }, { interactive });
     return;
   }
 
@@ -1165,12 +1273,12 @@ async function saveToGoogleSyncFile() {
     method: "POST",
     headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
     body
-  });
+  }, { interactive });
   const json = await response.json();
   googleSync.fileId = json.id;
 }
 
-async function googleFetch(url, options = {}) {
+async function googleFetch(url, options = {}, { interactive = true } = {}) {
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -1181,8 +1289,11 @@ async function googleFetch(url, options = {}) {
 
   if (response.status === 401) {
     googleSync.accessToken = null;
+    if (!interactive) {
+      throw new Error("Google token expired");
+    }
     await ensureGoogleAccessToken();
-    return googleFetch(url, options);
+    return googleFetch(url, options, { interactive });
   }
 
   if (!response.ok) {

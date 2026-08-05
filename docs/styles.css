@@ -823,6 +823,72 @@ button { cursor: pointer; }
   gap: 8px;
 }
 
+.sync-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #94a3b8;
+}
+
+.sync-status.signed-in,
+.sync-status.saved {
+  color: #166534;
+  border-color: rgba(22, 163, 74, 0.22);
+  background: rgba(240, 253, 244, 0.88);
+}
+
+.sync-status.signed-in .sync-dot,
+.sync-status.saved .sync-dot {
+  background: #16a34a;
+}
+
+.sync-status.saving {
+  color: #92400e;
+  border-color: rgba(245, 158, 11, 0.28);
+  background: rgba(255, 251, 235, 0.9);
+}
+
+.sync-status.saving .sync-dot {
+  background: #f59e0b;
+  animation: syncPulse 1s ease-in-out infinite;
+}
+
+.sync-status.error {
+  color: #991b1b;
+  border-color: rgba(220, 38, 38, 0.24);
+  background: rgba(254, 242, 242, 0.9);
+}
+
+.sync-status.error .sync-dot {
+  background: #dc2626;
+}
+
+@keyframes syncPulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
 .import-button {
   display: inline-flex;
   align-items: center;
