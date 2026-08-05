@@ -356,13 +356,27 @@ function renderTasks() {
 }
 
 function renderTemplates() {
+  const templates = [...state.templates].sort((a, b) => (a.title || "").localeCompare(b.title || "", "ja"));
   return `
     <div class="card">
       <div class="section-title"><h2>テンプレート</h2></div>
-      <div class="empty">
-        Web版の初期移設では、テンプレートは読み取り用の置き場です。<br />
-        予定・課題・空き時間タップ追加はこのWeb版で利用できます。
-      </div>
+      ${templates.length ? `
+        <div class="list">
+          ${templates.map(template => `
+            <div class="row template-row">
+              <span class="row-main">
+                <span class="row-title">${escapeHtml(template.title)}</span>
+                <span class="row-meta">${weekdayText(template.weekdays)} ・ ${template.items?.length ?? 0}件 ・ ${template.automaticallyApplies ? "自動適用" : "手動"}</span>
+              </span>
+            </div>
+          `).join("")}
+        </div>
+      ` : `
+        <div class="empty">
+          テンプレートはまだありません。<br />
+          iOS版バックアップを読み込むと、登録済みテンプレートも表示されます。
+        </div>
+      `}
     </div>
   `;
 }
@@ -391,6 +405,12 @@ function weekDates(date) {
   const day = d.getDay() || 7;
   const monday = addMinutes(d, -(day - 1) * 1440);
   return Array.from({ length: 7 }, (_, i) => addMinutes(monday, i * 1440));
+}
+
+function weekdayText(weekdays = []) {
+  const labels = { 1: "日", 2: "月", 3: "火", 4: "水", 5: "木", 6: "金", 7: "土" };
+  if (!weekdays.length) return "曜日未設定";
+  return weekdays.map(day => labels[day] ?? day).join("・");
 }
 
 function renderHourScale() {
