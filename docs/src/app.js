@@ -589,43 +589,58 @@ function renderPlanModal(plan, initialInterval) {
   const defaultStart = initialInterval?.start ?? addMinutes(today, 18 * 60);
   const defaultEnd = initialInterval?.end ?? addMinutes(defaultStart, 60);
   const data = plan ?? makePlan("", defaultStart, defaultEnd, "on", "blue");
+  const duration = minutesBetween(data.start, data.end);
   return `
     <form class="modal" data-form="plan">
       <div class="modal-head">
-        <h2>${isEdit ? "予定を編集" : "予定を追加"}</h2>
-        <button type="button" class="button" data-action="close-modal">閉じる</button>
+        <div>
+          <h2>${isEdit ? "予定を編集" : "予定を追加"}</h2>
+          <p>${timeText(data.start)}–${timeText(data.end)} ・ ${durationText(duration)}</p>
+        </div>
+        <button type="button" class="icon-button" data-action="close-modal" aria-label="閉じる">×</button>
       </div>
       <input type="hidden" name="id" value="${data.id}" />
-      <div class="form">
-        <div class="segmented">
-          <button type="button" data-kind="on" class="${data.kind === "on" ? "active" : ""}">ON</button>
-          <button type="button" data-kind="off" class="${data.kind === "off" ? "active" : ""}">OFF</button>
-        </div>
-        <input type="hidden" name="kind" value="${data.kind}" />
-        <div class="field"><label>タイトル</label><input name="title" value="${escapeAttr(data.title)}" placeholder="予定" /></div>
-        <div class="split">
-          <div class="field"><label>開始</label><input type="datetime-local" step="300" name="start" value="${dateInputValue(data.start)}" /></div>
-          <div class="field"><label>終了</label><input type="datetime-local" step="300" name="end" value="${dateInputValue(data.end)}" /></div>
-        </div>
-        <div class="field">
-          <label>未完了の課題から選ぶ</label>
-          <select name="taskID">
-            <option value="">選択しない</option>
-            ${state.tasks.filter(t => !t.isCompleted || t.id === data.taskID).map(task => `<option value="${task.id}" ${task.id === data.taskID ? "selected" : ""}>${escapeHtml(task.title)}</option>`).join("")}
-          </select>
-        </div>
-        <div class="field">
-          <label>色</label>
-          <div class="color-grid">
-            ${colorNames.map(color => `<button type="button" class="color-dot ${data.color === color ? "active" : ""}" data-color="${color}" style="background:${planColors[color]}" aria-label="${color}"></button>`).join("")}
+      <div class="modal-body">
+        <div class="form">
+          <div class="segmented">
+            <button type="button" data-kind="on" class="${data.kind === "on" ? "active" : ""}">ON</button>
+            <button type="button" data-kind="off" class="${data.kind === "off" ? "active" : ""}">OFF</button>
           </div>
-          <input type="hidden" name="color" value="${data.color}" />
+          <input type="hidden" name="kind" value="${data.kind}" />
+          <div class="field"><label>タイトル</label><input name="title" value="${escapeAttr(data.title)}" placeholder="予定" /></div>
+          <div class="split">
+            <div class="field"><label>開始</label><input type="datetime-local" step="300" name="start" value="${dateInputValue(data.start)}" /></div>
+            <div class="field"><label>終了</label><input type="datetime-local" step="300" name="end" value="${dateInputValue(data.end)}" /></div>
+          </div>
+          <div class="field">
+            <label>未完了の課題から選ぶ</label>
+            <select name="taskID">
+              <option value="">選択しない</option>
+              ${state.tasks.filter(t => !t.isCompleted || t.id === data.taskID).map(task => `<option value="${task.id}" data-title="${escapeAttr(task.title)}" data-color="${task.color}" ${task.id === data.taskID ? "selected" : ""}>${escapeHtml(task.title)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field">
+            <label>色</label>
+            <div class="color-grid">
+              ${colorNames.map(color => `<button type="button" class="color-dot ${data.color === color ? "active" : ""}" data-color="${color}" style="background:${planColors[color]}" aria-label="${color}"></button>`).join("")}
+            </div>
+            <input type="hidden" name="color" value="${data.color}" />
+          </div>
+          <div class="field"><label>メモ</label><textarea name="memo" rows="3">${escapeHtml(data.memo || "")}</textarea></div>
         </div>
-        <div class="field"><label>メモ</label><textarea name="memo" rows="3">${escapeHtml(data.memo || "")}</textarea></div>
+        <aside class="modal-summary">
+          <span>予定時間</span>
+          <strong data-summary-duration>${durationText(duration)}</strong>
+          <small data-summary-range>${dateText(data.start)} ${timeText(data.start)}–${timeText(data.end)}</small>
+          <p>空き時間から追加した場合は、その空き枠の始まりと終わりが自動で入ります。</p>
+        </aside>
       </div>
-      <div class="modal-actions">
+      <div class="modal-actions sticky-actions">
         <div>${isEdit ? `<button type="button" class="button danger" data-action="delete-plan" data-plan-id="${data.id}">削除</button>` : ""}</div>
-        <button class="button primary" type="submit">${isEdit ? "保存" : "追加"}</button>
+        <div class="action-pair">
+          <button type="button" class="button" data-action="close-modal">キャンセル</button>
+          <button class="button primary" type="submit">${isEdit ? "保存" : "追加"}</button>
+        </div>
       </div>
     </form>
   `;
@@ -634,34 +649,50 @@ function renderPlanModal(plan, initialInterval) {
 function renderTaskModal(task) {
   const isEdit = Boolean(task);
   const data = task ?? makeTask("", "", null, 60, 1, nextTaskColor());
+  const scheduled = scheduledMinutesForTask(data.id);
+  const remaining = Math.max(0, data.estimatedMinutes - data.completedMinutes - scheduled);
   return `
     <form class="modal" data-form="task">
       <div class="modal-head">
-        <h2>${isEdit ? "課題を編集" : "課題を追加"}</h2>
-        <button type="button" class="button" data-action="close-modal">閉じる</button>
+        <div>
+          <h2>${isEdit ? "課題を編集" : "課題を追加"}</h2>
+          <p>${isEdit ? `残り ${durationText(remaining)}` : "見積もり時間と締切を入れておくと、予定に割り当てやすくなります。"}</p>
+        </div>
+        <button type="button" class="icon-button" data-action="close-modal" aria-label="閉じる">×</button>
       </div>
       <input type="hidden" name="id" value="${data.id}" />
-      <div class="form">
-        <div class="field"><label>タイトル</label><input name="title" value="${escapeAttr(data.title)}" placeholder="課題" /></div>
-        <div class="split">
-          <div class="field"><label>カテゴリ</label><input name="category" value="${escapeAttr(data.category || "")}" placeholder="学習" /></div>
-          <div class="field"><label>見積もり（分）</label><input type="number" min="5" step="5" name="estimatedMinutes" value="${data.estimatedMinutes}" /></div>
+      <div class="modal-body">
+        <div class="form">
+          <div class="field"><label>タイトル</label><input name="title" value="${escapeAttr(data.title)}" placeholder="課題" /></div>
+          <div class="split">
+            <div class="field"><label>カテゴリ</label><input name="category" value="${escapeAttr(data.category || "")}" placeholder="学習" /></div>
+            <div class="field"><label>見積もり（分）</label><input type="number" min="5" step="5" name="estimatedMinutes" value="${data.estimatedMinutes}" /></div>
+          </div>
+          <div class="split">
+            <div class="field"><label>完了済み（分）</label><input type="number" min="0" step="5" name="completedMinutes" value="${data.completedMinutes || 0}" /></div>
+            <div class="field"><label>締切</label><input type="datetime-local" step="300" name="deadline" value="${data.deadline ? dateInputValue(data.deadline) : ""}" /></div>
+          </div>
+          <div class="field">
+            <label>状態</label>
+            <select name="isCompleted">
+              <option value="false" ${!data.isCompleted ? "selected" : ""}>未完了</option>
+              <option value="true" ${data.isCompleted ? "selected" : ""}>完了</option>
+            </select>
+          </div>
         </div>
-        <div class="split">
-          <div class="field"><label>完了済み（分）</label><input type="number" min="0" step="5" name="completedMinutes" value="${data.completedMinutes || 0}" /></div>
-          <div class="field"><label>締切</label><input type="datetime-local" step="300" name="deadline" value="${data.deadline ? dateInputValue(data.deadline) : ""}" /></div>
-        </div>
-        <div class="field">
-          <label>状態</label>
-          <select name="isCompleted">
-            <option value="false" ${!data.isCompleted ? "selected" : ""}>未完了</option>
-            <option value="true" ${data.isCompleted ? "selected" : ""}>完了</option>
-          </select>
-        </div>
+        <aside class="modal-summary">
+          <span>進捗</span>
+          <strong>${durationText(Math.max(0, data.completedMinutes + scheduled))}</strong>
+          <small>残り ${durationText(remaining)}</small>
+          <p>課題を予定に紐づけると、配置済み時間として自動で加算されます。</p>
+        </aside>
       </div>
-      <div class="modal-actions">
+      <div class="modal-actions sticky-actions">
         <div>${isEdit ? `<button type="button" class="button danger" data-action="delete-task" data-task-id="${data.id}">削除</button>` : ""}</div>
-        <button class="button primary" type="submit">${isEdit ? "保存" : "追加"}</button>
+        <div class="action-pair">
+          <button type="button" class="button" data-action="close-modal">キャンセル</button>
+          <button class="button primary" type="submit">${isEdit ? "保存" : "追加"}</button>
+        </div>
       </div>
     </form>
   `;
@@ -726,6 +757,8 @@ function bindEvents() {
     });
   });
 
+  document.querySelector('[data-form="plan"]')?.addEventListener("change", handlePlanFormChange);
+  document.querySelector('[data-form="plan"]')?.addEventListener("input", handlePlanFormChange);
   document.querySelector('[data-form="plan"]')?.addEventListener("submit", savePlanFromForm);
   document.querySelector('[data-form="task"]')?.addEventListener("submit", saveTaskFromForm);
 }
@@ -761,6 +794,38 @@ function openTaskModal(task = null) {
 function closeModal() {
   modal = null;
   render();
+}
+
+function handlePlanFormChange(event) {
+  const form = event.currentTarget;
+  if (event.target.name === "start") {
+    const start = fromDateInput(form.start.value);
+    const end = fromDateInput(form.end.value);
+    if (!(end > start)) {
+      form.end.value = dateInputValue(addMinutes(start, 60));
+    }
+  }
+
+  if (event.target.name === "taskID") {
+    const option = event.target.selectedOptions[0];
+    if (option?.value) {
+      form.title.value = option.dataset.title || form.title.value;
+      form.color.value = option.dataset.color || form.color.value;
+      form.querySelectorAll("[data-color]").forEach(item => {
+        item.classList.toggle("active", item.dataset.color === form.color.value);
+      });
+    }
+  }
+
+  updatePlanSummary(form);
+}
+
+function updatePlanSummary(form) {
+  const start = fromDateInput(form.start.value);
+  const end = fromDateInput(form.end.value);
+  const duration = minutesBetween(start, end);
+  form.querySelector("[data-summary-duration]")?.replaceChildren(document.createTextNode(durationText(duration)));
+  form.querySelector("[data-summary-range]")?.replaceChildren(document.createTextNode(`${dateText(start)} ${timeText(start)}–${timeText(end)}`));
 }
 
 function savePlanFromForm(event) {
