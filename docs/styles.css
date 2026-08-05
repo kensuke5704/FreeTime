@@ -236,6 +236,24 @@ button { cursor: pointer; }
   background: rgba(255,255,255,0.65);
 }
 
+.template-empty {
+  min-height: 170px;
+  display: grid;
+  place-items: center;
+  gap: 16px;
+}
+
+.template-empty strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.template-empty p {
+  margin: 0;
+}
+
 .tabs {
   position: fixed;
   left: 50%;
@@ -480,6 +498,11 @@ button { cursor: pointer; }
   gap: 12px;
 }
 
+.stats-layout {
+  display: grid;
+  gap: 16px;
+}
+
 .stat-card {
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -491,6 +514,113 @@ button { cursor: pointer; }
   font-size: 28px;
   font-weight: 900;
   letter-spacing: -0.05em;
+}
+
+.day-balance {
+  display: flex;
+  height: 18px;
+  overflow: hidden;
+  border-radius: 999px;
+  margin-top: 18px;
+  background: #e2e8f0;
+}
+
+.day-balance span {
+  display: block;
+}
+
+.balance-on { background: var(--blue); }
+.balance-off { background: #475569; }
+.balance-free { background: #cbd5e1; }
+
+.legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.legend-on { background: var(--blue); }
+.legend-off { background: #475569; }
+.legend-free { background: #cbd5e1; }
+
+.bar-list {
+  display: grid;
+  gap: 11px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr) 92px;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.bar-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.bar-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--blue);
+}
+
+.bar-row strong {
+  color: var(--ink);
+  text-align: right;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.template-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  background: #fff;
+}
+
+.template-card strong {
+  grid-row: span 2;
+  align-self: center;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.template-card small {
+  grid-column: 2;
+  margin-top: -8px;
+  color: var(--muted);
+  font-weight: 800;
 }
 
 .toast {

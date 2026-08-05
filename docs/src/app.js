@@ -419,20 +419,28 @@ function renderTemplates() {
     <div class="card">
       <div class="section-title"><h2>テンプレート</h2></div>
       ${templates.length ? `
-        <div class="list">
+        <div class="template-grid">
           ${templates.map(template => `
-            <div class="row template-row">
-              <span class="row-main">
-                <span class="row-title">${escapeHtml(template.title)}</span>
-                <span class="row-meta">${weekdayText(template.weekdays)} ・ ${template.items?.length ?? 0}件 ・ ${template.automaticallyApplies ? "自動適用" : "手動"}</span>
-              </span>
+            <div class="template-card">
+              <div>
+                <div class="row-title">${escapeHtml(template.title)}</div>
+                <div class="row-meta">${weekdayText(template.weekdays)} ・ ${template.automaticallyApplies ? "自動適用" : "手動"}</div>
+              </div>
+              <strong>${template.items?.length ?? 0}</strong>
+              <small>登録予定</small>
             </div>
           `).join("")}
         </div>
       ` : `
-        <div class="empty">
-          テンプレートはまだありません。<br />
-          iOS版バックアップを読み込むと、登録済みテンプレートも表示されます。
+        <div class="empty template-empty">
+          <div>
+            <strong>テンプレートはまだありません</strong>
+            <p>iOS版のバックアップJSONを読み込むと、登録済みテンプレートもここに表示されます。</p>
+          </div>
+          <label class="button primary import-button">
+            バックアップを読み込む
+            <input type="file" accept="application/json,.json" data-action="import" hidden />
+          </label>
         </div>
       `}
     </div>
@@ -444,15 +452,42 @@ function renderStats() {
     .reduce((sum, plan) => sum + minutesBetween(plan.start, plan.end), 0);
   const todayOff = plansOn(today).filter(plan => plan.kind === "off")
     .reduce((sum, plan) => sum + minutesBetween(plan.start, plan.end), 0);
+  const todayFree = freeMinutesOn(today);
   const incomplete = state.tasks.filter(task => !task.isCompleted).length;
+  const dates = weekDates(today);
+  const maxFree = Math.max(...dates.map(date => freeMinutesOn(date)), 1);
   return `
-    <div class="card">
-      <div class="section-title"><h2>集計</h2></div>
-      <div class="stat-grid">
-        <div class="stat-card"><div class="muted small">今日のON</div><div class="stat-number">${durationText(todayOn)}</div></div>
-        <div class="stat-card"><div class="muted small">今日のOFF</div><div class="stat-number">${durationText(todayOff)}</div></div>
-        <div class="stat-card"><div class="muted small">今日の空き</div><div class="stat-number">${durationText(freeMinutesOn(today))}</div></div>
-        <div class="stat-card"><div class="muted small">未完了課題</div><div class="stat-number">${incomplete}件</div></div>
+    <div class="stats-layout">
+      <div class="card">
+        <div class="section-title"><h2>今日の内訳</h2></div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="muted small">ON</div><div class="stat-number">${durationText(todayOn)}</div></div>
+          <div class="stat-card"><div class="muted small">OFF</div><div class="stat-number">${durationText(todayOff)}</div></div>
+          <div class="stat-card"><div class="muted small">空き</div><div class="stat-number">${durationText(todayFree)}</div></div>
+          <div class="stat-card"><div class="muted small">未完了課題</div><div class="stat-number">${incomplete}件</div></div>
+        </div>
+        <div class="day-balance" aria-label="今日の時間配分">
+          <span class="balance-on" style="width:${todayOn / 1440 * 100}%"></span>
+          <span class="balance-off" style="width:${todayOff / 1440 * 100}%"></span>
+          <span class="balance-free" style="width:${todayFree / 1440 * 100}%"></span>
+        </div>
+        <div class="legend">
+          <span><i class="legend-on"></i>ON</span>
+          <span><i class="legend-off"></i>OFF</span>
+          <span><i class="legend-free"></i>空き</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-title"><h2>週の空き時間</h2><span class="small muted">多い日ほど長いバー</span></div>
+        <div class="bar-list">
+          ${dates.map(date => `
+            <div class="bar-row">
+              <span>${dateText(date)}</span>
+              <div class="bar-track"><i style="width:${freeMinutesOn(date) / maxFree * 100}%"></i></div>
+              <strong>${durationText(freeMinutesOn(date))}</strong>
+            </div>
+          `).join("")}
+        </div>
       </div>
     </div>
   `;
