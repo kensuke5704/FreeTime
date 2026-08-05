@@ -975,10 +975,6 @@ async function syncWithGoogle() {
   if (!clientId) {
     return;
   }
-  const accountEmail = ensureGoogleAccountEmail();
-  if (!accountEmail) {
-    return;
-  }
 
   try {
     await ensureGoogleAccessToken();
@@ -1028,25 +1024,7 @@ function ensureGoogleClientId() {
 }
 
 function ensureGoogleAccountEmail() {
-  const current = googleAccountEmail();
-  if (current) return current;
-
-  const input = prompt([
-    "同期に使うGoogleアカウントのメールアドレスを入力してください。",
-    "",
-    "例: your-account@gmail.com",
-    "このメールアドレスはこのブラウザ内だけに保存され、GitHub Pagesには公開されません。"
-  ].join("\n"));
-
-  const normalized = input?.trim().toLowerCase();
-  if (!normalized) {
-    toast("Googleアカウントが未設定です");
-    return "";
-  }
-
-  localStorage.setItem(GOOGLE_ACCOUNT_EMAIL_KEY, normalized);
-  toast("同期アカウントを保存しました");
-  return normalized;
+  return googleAccountEmail();
 }
 
 function googleAccountEmail() {
@@ -1120,7 +1098,6 @@ async function findGoogleSyncFile() {
 
 async function verifyGoogleAccount() {
   const expected = googleAccountEmail();
-  if (!expected) return;
 
   const response = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
     headers: {
@@ -1132,6 +1109,11 @@ async function verifyGoogleAccount() {
   }
   const profile = await response.json();
   const actual = String(profile.email || "").toLowerCase();
+  if (!expected && actual) {
+    localStorage.setItem(GOOGLE_ACCOUNT_EMAIL_KEY, actual);
+    toast(`${actual} と同期します`);
+    return;
+  }
   if (actual !== expected) {
     throw new Error(`Googleアカウントが違います: ${actual || "不明"}`);
   }
