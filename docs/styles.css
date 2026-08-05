@@ -1247,3 +1247,261 @@ button { cursor: pointer; }
     box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
   }
 }
+
+/* Final visual refinement layer. Keep this last so the web app feels closer to the original SwiftUI app. */
+body {
+  background:
+    radial-gradient(circle at 72% -8%, rgba(10, 132, 255, 0.08), transparent 34%),
+    #f7f7fa;
+}
+
+.card {
+  border-color: rgba(210, 215, 226, 0.78);
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: none;
+  backdrop-filter: blur(18px);
+}
+
+.card.flat {
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.button {
+  border-color: rgba(210, 215, 226, 0.92);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #111827;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.84) inset;
+}
+
+.button.primary {
+  border-color: transparent;
+  background: linear-gradient(180deg, #168cff, #0a84ff);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(10, 132, 255, 0.22);
+}
+
+.topbar h2 {
+  letter-spacing: -0.045em;
+}
+
+.metric-label,
+.eyebrow {
+  color: #7a8392;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.metric-value {
+  font-weight: 800;
+  letter-spacing: -0.085em;
+}
+
+.quiet-line {
+  margin: 8px 0 0;
+  color: #6b7280;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.hero-card {
+  border-color: transparent;
+  background: transparent;
+  padding: 10px 2px 4px;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.next-card {
+  border-color: rgba(10, 132, 255, 0.14);
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: 0 12px 32px rgba(17, 24, 39, 0.045);
+}
+
+.next-card strong {
+  font-size: 24px;
+  font-weight: 850;
+}
+
+.section-title h2 {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.timeline {
+  border-color: #dfe3ea;
+  border-radius: 9px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.74)),
+    #fff;
+}
+
+.timeline.desktop-main {
+  height: 86px;
+}
+
+.grid-line {
+  background: rgba(107, 114, 128, 0.18);
+}
+
+.plan-block {
+  border-radius: 7px;
+  font-weight: 750;
+}
+
+.plan-block.off {
+  background: repeating-linear-gradient(135deg, #515967 0, #515967 6px, #667085 6px, #667085 12px);
+}
+
+.list {
+  gap: 0;
+}
+
+.row {
+  border-width: 0 0 1px;
+  border-color: rgba(226, 232, 240, 0.92);
+  border-radius: 0;
+  background: transparent;
+  padding: 13px 2px;
+}
+
+.row:hover {
+  border-color: rgba(10, 132, 255, 0.32);
+  background: rgba(10, 132, 255, 0.035);
+}
+
+.row:first-child {
+  padding-top: 8px;
+}
+
+.row-title {
+  font-weight: 750;
+}
+
+.row-meta {
+  color: #747d8c;
+}
+
+.color-bar {
+  width: 4px;
+  min-height: 30px;
+  border-radius: 4px;
+}
+
+.week-summary,
+.task-overview {
+  gap: 0;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 15px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.week-summary div,
+.task-overview div {
+  border: 0;
+  border-right: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 0;
+  background: transparent;
+}
+
+.week-summary div:last-child,
+.task-overview div:last-child {
+  border-right: 0;
+}
+
+.sync-status {
+  min-height: 33px;
+  background: rgba(255, 255, 255, 0.62);
+  font-weight: 750;
+}
+
+@media (min-width: 1024px) {
+  body {
+    background:
+      radial-gradient(circle at 72% -8%, rgba(10, 132, 255, 0.09), transparent 32%),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.76) 0 238px, transparent 238px),
+      #f7f7fa;
+  }
+
+  .app-shell {
+    width: min(1320px, 100%);
+    grid-template-columns: 238px minmax(0, 1fr);
+  }
+
+  .sidebar {
+    padding: 30px 18px;
+    color: #111827;
+    border-right: 1px solid rgba(226, 232, 240, 0.86);
+    background: rgba(255, 255, 255, 0.48);
+    backdrop-filter: blur(18px);
+  }
+
+  .sidebar .brand-title {
+    color: #111827;
+    font-size: 31px;
+  }
+
+  .sidebar .brand-subtitle {
+    color: #6b7280;
+  }
+
+  .side-tabs .tab {
+    color: #5f6978;
+    border-radius: 11px;
+    padding: 12px 13px;
+    font-weight: 750;
+  }
+
+  .side-tabs .tab:hover {
+    background: rgba(10, 132, 255, 0.07);
+    color: #111827;
+  }
+
+  .side-tabs .tab.active {
+    background: rgba(10, 132, 255, 0.12);
+    color: #0057bd;
+  }
+
+  .workspace {
+    padding: 28px 34px 54px;
+  }
+
+  .dashboard {
+    grid-template-columns: minmax(0, 1.28fr) minmax(300px, 0.72fr);
+    gap: 18px;
+  }
+
+  .hero-card {
+    grid-template-columns: minmax(300px, 1fr) minmax(240px, 300px);
+    gap: 22px;
+  }
+
+  .metric-value {
+    font-size: clamp(48px, 5.2vw, 68px);
+  }
+}
+
+@media (max-width: 1023px) {
+  .hero-card {
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(226, 232, 240, 0.82);
+  }
+
+  .week-summary,
+  .task-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .week-summary div,
+  .task-overview div {
+    border-right: 0;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  }
+
+  .week-summary div:last-child,
+  .task-overview div:last-child {
+    border-bottom: 0;
+  }
+}

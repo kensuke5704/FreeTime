@@ -381,8 +381,8 @@ function renderGoogleSyncStatus() {
 
 function currentViewTitle() {
   return {
-    home: "今日の空き時間",
-    week: "週間スケジュール",
+    home: "今日",
+    week: "週間",
     tasks: "課題",
     templates: "テンプレート",
     stats: "集計"
@@ -413,24 +413,19 @@ function renderHome() {
     <div class="dashboard">
       <div class="card hero-card">
         <div class="hero-copy">
-          <div class="metric-label">今日の空き時間</div>
+          <div class="metric-label">空き時間</div>
           <div class="metric-value">${durationText(freeMinutesOn(today))}</div>
-          <p class="muted">${upcoming ? `次は ${timeText(upcoming.start)} の「${escapeHtml(upcoming.title)}」です。` : "この後の未開始予定はありません。"}</p>
+          <p class="quiet-line">${upcoming ? `次は ${timeText(upcoming.start)}「${escapeHtml(upcoming.title)}」` : "この後の予定はありません"}</p>
         </div>
         <div class="next-card">
-          <div class="metric-label">次に使える空き枠</div>
+          <div class="metric-label">次の空き</div>
           <strong>${free ? `${timeText(free.start)}–${timeText(free.end)}` : "なし"}</strong>
           <span>${free ? durationText(minutesBetween(free.start, free.end)) : "今日はすべて埋まっています"}</span>
-          ${free ? `<button class="button primary compact" data-action="add-plan-from-free" data-start="${free.start.toISOString()}" data-end="${free.end.toISOString()}">この枠に予定を入れる</button>` : ""}
-        </div>
-        <div class="mini-stats">
-          <div><span>${plans.length}</span><small>予定</small></div>
-          <div><span>${onPlans.length}</span><small>ON</small></div>
-          <div><span>${urgentTasks.length}</span><small>締切近め</small></div>
+          ${free ? `<button class="button primary compact" data-action="add-plan-from-free" data-start="${free.start.toISOString()}" data-end="${free.end.toISOString()}">予定にする</button>` : ""}
         </div>
       </div>
       <div class="card timeline-card">
-        <div class="section-title"><h2>今日</h2><span class="small muted">空き時間をタップして予定追加</span></div>
+        <div class="section-title"><h2>今日</h2><span class="small muted">空き時間をクリック</span></div>
         ${renderHourScale()}
         ${renderTimeline(today, plans, "today", "desktop-main")}
       </div>
@@ -455,7 +450,7 @@ function renderWeek() {
     <div class="card">
       <div class="section-title">
         <h2>週間</h2>
-        <span class="small muted">各日の空き時間をクリックすると、その連続空き時間で予定追加します</span>
+        <span class="small muted">空き時間をクリック</span>
       </div>
       <div class="week-summary">
         <div><span>${durationText(totalFree)}</span><small>週の空き時間</small></div>
