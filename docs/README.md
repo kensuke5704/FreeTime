@@ -18,12 +18,15 @@ GitHub Pages 用の静的 Web 版です。
    - `https://kensuke5704.github.io`
    - `http://localhost:4173`
 3. Google Drive APIを有効化します。
-4. `docs/src/google-config.js` の `GOOGLE_CLIENT_ID` にクライアントIDを設定します。
+4. サイト右上の「Google同期」を押し、表示された入力欄にクライアントIDを貼り付けます。
+   - コード側に固定したい場合は、`docs/src/google-config.js` の `GOOGLE_CLIENT_ID` に設定することもできます。
 5. サイト右上の「読み込み」で既存JSONを取り込みます。
 6. 「Google同期」を押すと、Google Drive の `appDataFolder` に保存されます。
-7. 別デバイスでは同じGoogleアカウントで「Google同期」を押し、Google側のデータを読み込みます。
+7. 別デバイスでは同じGoogleアカウントで「Google同期」を押し、同じクライアントIDを入力してGoogle側のデータを読み込みます。
 
 `appDataFolder` のデータは通常のDriveファイル一覧には表示されず、このアプリが要求する権限でのみ読み書きされます。
+入力したクライアントIDは各ブラウザの `localStorage` に保存されます。これは識別子であり、予定データや秘密鍵ではありません。
+同期時にはログイン中のGoogleアカウントのメールアドレスを確認し、設定した同期アカウントと違う場合は保存/読み込みを止めます。
 
 ## GitHub Pages 設定
 

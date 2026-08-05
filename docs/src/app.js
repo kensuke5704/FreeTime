@@ -3,6 +3,8 @@ import { GOOGLE_CLIENT_ID, GOOGLE_SYNC_FILE_NAME } from "./google-config.js";
 
 const STORE_KEY = "freeTimeWebStore.v1";
 const MIGRATED_MARK_KEY = "freeTimeWebStore.migrated.v1";
+const GOOGLE_CLIENT_ID_KEY = "freeTimeWebStore.googleClientId.v1";
+const GOOGLE_ACCOUNT_EMAIL_KEY = "freeTimeWebStore.googleAccountEmail.v1";
 const APPLE_REFERENCE_DATE_MS = Date.UTC(2001, 0, 1, 0, 0, 0);
 
 const planColors = {
@@ -969,8 +971,12 @@ async function importBackupFromInput(event) {
 }
 
 async function syncWithGoogle() {
-  if (!GOOGLE_CLIENT_ID) {
-    toast("Google Client IDを設定してください");
+  const clientId = ensureGoogleClientId();
+  if (!clientId) {
+    return;
+  }
+  const accountEmail = ensureGoogleAccountEmail();
+  if (!accountEmail) {
     return;
   }
 
@@ -995,29 +1001,94 @@ async function syncWithGoogle() {
     toast("Googleへ保存しました");
   } catch (error) {
     console.error(error);
-    toast("Google同期に失敗しました");
+    toast(error.message?.includes("Googleアカウントが違います") ? "指定したGoogleアカウントでログインしてください" : "Google同期に失敗しました");
   }
+}
+
+function ensureGoogleClientId() {
+  const current = googleClientId();
+  if (current) return current;
+
+  const input = prompt([
+    "Google OAuth Client IDを入力してください。",
+    "",
+    "Google Cloud Consoleで作成したウェブアプリ用Client IDです。",
+    "予定データは公開されず、Google Driveの非公開アプリ領域に保存されます。"
+  ].join("\n"));
+
+  const normalized = input?.trim();
+  if (!normalized) {
+    toast("Google Client IDが未設定です");
+    return "";
+  }
+
+  localStorage.setItem(GOOGLE_CLIENT_ID_KEY, normalized);
+  toast("Google Client IDを保存しました");
+  return normalized;
+}
+
+function ensureGoogleAccountEmail() {
+  const current = googleAccountEmail();
+  if (current) return current;
+
+  const input = prompt([
+    "同期に使うGoogleアカウントのメールアドレスを入力してください。",
+    "",
+    "例: your-account@gmail.com",
+    "このメールアドレスはこのブラウザ内だけに保存され、GitHub Pagesには公開されません。"
+  ].join("\n"));
+
+  const normalized = input?.trim().toLowerCase();
+  if (!normalized) {
+    toast("Googleアカウントが未設定です");
+    return "";
+  }
+
+  localStorage.setItem(GOOGLE_ACCOUNT_EMAIL_KEY, normalized);
+  toast("同期アカウントを保存しました");
+  return normalized;
+}
+
+function googleAccountEmail() {
+  return localStorage.getItem(GOOGLE_ACCOUNT_EMAIL_KEY)?.trim().toLowerCase() || "";
+}
+
+function googleClientId() {
+  return localStorage.getItem(GOOGLE_CLIENT_ID_KEY)?.trim() || GOOGLE_CLIENT_ID.trim();
 }
 
 function ensureGoogleAccessToken() {
   if (googleSync.accessToken) return Promise.resolve(googleSync.accessToken);
 
+  const clientId = ensureGoogleClientId();
+  if (!clientId) return Promise.reject(new Error("Google Client ID is not configured"));
+
   return new Promise((resolve, reject) => {
     waitForGoogleIdentity()
       .then(() => {
         const tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: GOOGLE_CLIENT_ID,
-          scope: "https://www.googleapis.com/auth/drive.appdata",
-          callback: response => {
+          client_id: clientId,
+          scope: "https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email",
+          login_hint: googleAccountEmail(),
+          callback: async response => {
             if (response.error) {
               reject(new Error(response.error));
               return;
             }
             googleSync.accessToken = response.access_token;
-            resolve(response.access_token);
+            try {
+              await verifyGoogleAccount();
+              resolve(response.access_token);
+            } catch (error) {
+              googleSync.accessToken = null;
+              reject(error);
+            }
           }
         });
-        tokenClient.requestAccessToken({ prompt: "consent" });
+        tokenClient.requestAccessToken({
+          prompt: "consent",
+          login_hint: googleAccountEmail()
+        });
       })
       .catch(reject);
   });
@@ -1045,6 +1116,25 @@ async function findGoogleSyncFile() {
   const response = await googleFetch(`https://www.googleapis.com/drive/v3/files?${params}`);
   const json = await response.json();
   return json.files?.[0] ?? null;
+}
+
+async function verifyGoogleAccount() {
+  const expected = googleAccountEmail();
+  if (!expected) return;
+
+  const response = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+    headers: {
+      Authorization: `Bearer ${googleSync.accessToken}`
+    }
+  });
+  if (!response.ok) {
+    throw new Error(`Google account verification failed: ${response.status}`);
+  }
+  const profile = await response.json();
+  const actual = String(profile.email || "").toLowerCase();
+  if (actual !== expected) {
+    throw new Error(`Googleアカウントが違います: ${actual || "不明"}`);
+  }
 }
 
 async function loadFromGoogleSyncFile(fileId) {
