@@ -1,4 +1,8 @@
+import { migratedState } from "./migrated-data.js";
+
 const STORE_KEY = "freeTimeWebStore.v1";
+const MIGRATED_MARK_KEY = "freeTimeWebStore.migrated.v1";
+const APPLE_REFERENCE_DATE_MS = Date.UTC(2001, 0, 1, 0, 0, 0);
 
 const planColors = {
   blue: "#2563eb",
@@ -38,6 +42,12 @@ function loadState() {
         templates: Array.isArray(parsed.templates) ? parsed.templates : []
       };
     } catch {}
+  }
+  if (migratedState && !localStorage.getItem(MIGRATED_MARK_KEY)) {
+    const normalized = normalizeImportedState(migratedState);
+    localStorage.setItem(MIGRATED_MARK_KEY, "1");
+    localStorage.setItem(STORE_KEY, JSON.stringify(normalized));
+    return normalized;
   }
   return seedState();
 }
@@ -214,21 +224,50 @@ function render() {
   const app = document.querySelector("#app");
   app.innerHTML = `
     <main class="app-shell">
-      <header class="topbar">
+      <aside class="sidebar">
         <div class="brand">
           <h1 class="brand-title">FreeTime</h1>
-          <p class="brand-subtitle">予定のすき間を、そのまま行動に変える。</p>
+          <p class="brand-subtitle">予定と空き時間</p>
         </div>
-        <button class="button" data-action="export">バックアップ</button>
-      </header>
-      ${renderViews()}
+        ${renderTabs("side")}
+        <div class="sidebar-actions">
+          <button class="button primary" data-action="add-plan">予定を追加</button>
+          <button class="button" data-action="add-task">課題を追加</button>
+        </div>
+      </aside>
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">${new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "long" })}</p>
+            <h2>${currentViewTitle()}</h2>
+          </div>
+          <div class="top-actions">
+            <label class="button import-button">
+              読み込み
+              <input type="file" accept="application/json,.json" data-action="import" hidden />
+            </label>
+            <button class="button" data-action="export">書き出し</button>
+          </div>
+        </header>
+        ${renderViews()}
+      </section>
     </main>
     <button class="fab" data-action="add-plan" aria-label="予定を追加">+</button>
-    ${renderTabs()}
+    ${renderTabs("bottom")}
     <div class="modal-backdrop ${modal ? "active" : ""}" data-modal-backdrop>${modal ? renderModal() : ""}</div>
     <div class="toast" id="toast"></div>
   `;
   bindEvents();
+}
+
+function currentViewTitle() {
+  return {
+    home: "今日の空き時間",
+    week: "週間スケジュール",
+    tasks: "課題",
+    templates: "テンプレート",
+    stats: "集計"
+  }[currentView];
 }
 
 function renderViews() {
@@ -251,16 +290,23 @@ function renderHome() {
     .slice(0, 2);
 
   return `
-    <div class="grid two">
-      <div class="card">
-        <div class="metric">
+    <div class="dashboard">
+      <div class="card hero-card">
+        <div class="hero-copy">
           <div class="metric-label">今日の空き時間</div>
           <div class="metric-value">${durationText(freeMinutesOn(today))}</div>
+          <p class="muted">${upcoming ? `次は ${timeText(upcoming.start)} の「${escapeHtml(upcoming.title)}」です。` : "この後の予定はありません。"}</p>
         </div>
-        <p class="muted">${upcoming ? `次の予定 ${timeText(upcoming.start)} ${escapeHtml(upcoming.title)}` : "この後の予定はありません"}</p>
+        <div class="mini-stats">
+          <div><span>${plans.length}</span><small>予定</small></div>
+          <div><span>${onPlans.length}</span><small>ON</small></div>
+          <div><span>${urgentTasks.length}</span><small>締切近め</small></div>
+        </div>
+      </div>
+      <div class="card timeline-card">
         <div class="section-title"><h2>今日</h2><span class="small muted">空き時間をタップして予定追加</span></div>
         ${renderHourScale()}
-        ${renderTimeline(today, plans, "today")}
+        ${renderTimeline(today, plans, "today", "desktop-main")}
       </div>
       <div class="card flat">
         <div class="section-title"><h2>今日の予定</h2><button class="button" data-action="add-plan">予定を追加</button></div>
@@ -405,9 +451,9 @@ function renderTaskRow(task) {
   `;
 }
 
-function renderTabs() {
+function renderTabs(position = "bottom") {
   const labels = { home: "ホーム", week: "週間", tasks: "課題", templates: "テンプレート", stats: "集計" };
-  return `<nav class="tabs">${views.map(view => `<button class="tab ${currentView === view ? "active" : ""}" data-view="${view}">${labels[view]}</button>`).join("")}</nav>`;
+  return `<nav class="tabs ${position === "side" ? "side-tabs" : "bottom-tabs"}">${views.map(view => `<button class="tab ${currentView === view ? "active" : ""}" data-view="${view}">${labels[view]}</button>`).join("")}</nav>`;
 }
 
 function renderModal() {
@@ -529,6 +575,8 @@ function bindEvents() {
       if (action === "timeline-click") handleTimelineClick(event, el);
     });
   });
+
+  document.querySelector('[data-action="import"]')?.addEventListener("change", importBackupFromInput);
 
   document.querySelector("[data-modal-backdrop]")?.addEventListener("click", event => {
     if (event.target.matches("[data-modal-backdrop]")) closeModal();
@@ -660,6 +708,99 @@ function exportBackup() {
   a.download = `FreeTime-web-backup-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+async function importBackupFromInput(event) {
+  const file = event.currentTarget.files?.[0];
+  if (!file) return;
+  try {
+    const json = JSON.parse(await file.text());
+    state = normalizeImportedState(json);
+    saveState();
+    closeModal();
+    toast("既存データを読み込みました");
+    render();
+  } catch (error) {
+    toast("読み込みに失敗しました");
+    console.error(error);
+  } finally {
+    event.currentTarget.value = "";
+  }
+}
+
+function normalizeImportedState(input) {
+  const payload = input?.payload ?? input;
+  const plans = Array.isArray(payload?.plans) ? payload.plans.map(normalizePlan) : [];
+  const tasks = Array.isArray(payload?.tasks) ? payload.tasks.map(normalizeTask) : [];
+  const templates = Array.isArray(payload?.templates) ? payload.templates.map(normalizeTemplate) : [];
+  return { plans, tasks, templates };
+}
+
+function normalizePlan(plan) {
+  return {
+    id: stringID(plan.id),
+    title: plan.title ?? "予定",
+    start: normalizeDate(plan.start),
+    end: normalizeDate(plan.end),
+    kind: plan.kind === "OFF" || plan.kind === "off" ? "off" : "on",
+    color: normalizeColor(plan.color),
+    memo: plan.memo ?? "",
+    taskID: plan.taskID ? stringID(plan.taskID) : null,
+    sourceTemplateID: plan.sourceTemplateID ? stringID(plan.sourceTemplateID) : null,
+    sourceTemplateItemID: plan.sourceTemplateItemID ? stringID(plan.sourceTemplateItemID) : null
+  };
+}
+
+function normalizeTask(task) {
+  return {
+    id: stringID(task.id),
+    title: task.title ?? "課題",
+    category: task.category ?? "未分類",
+    deadline: task.deadline ? normalizeDate(task.deadline) : null,
+    estimatedMinutes: Number(task.estimatedMinutes ?? 60),
+    completedMinutes: Number(task.completedMinutes ?? 0),
+    priority: Number(task.priority ?? 1),
+    color: normalizeColor(task.color),
+    memo: task.memo ?? "",
+    isCompleted: Boolean(task.isCompleted)
+  };
+}
+
+function normalizeTemplate(template) {
+  return {
+    id: stringID(template.id),
+    title: template.title ?? "テンプレート",
+    weekdays: Array.isArray(template.weekdays) ? template.weekdays : [],
+    items: Array.isArray(template.items) ? template.items.map(item => ({
+      id: stringID(item.id),
+      title: item.title ?? "予定",
+      startMinute: Number(item.startMinute ?? 0),
+      endMinute: Number(item.endMinute ?? 60),
+      kind: item.kind === "ON" || item.kind === "on" ? "on" : "off",
+      color: normalizeColor(item.color)
+    })) : [],
+    automaticallyApplies: template.automaticallyApplies !== false
+  };
+}
+
+function normalizeDate(value) {
+  if (typeof value === "string") return new Date(value).toISOString();
+  if (typeof value === "number") {
+    // Swift JSONEncoder の標準 Date は 2001-01-01 00:00:00 UTC からの秒数。
+    return new Date(APPLE_REFERENCE_DATE_MS + value * 1000).toISOString();
+  }
+  return new Date().toISOString();
+}
+
+function normalizeColor(color) {
+  return colorNames.includes(color) ? color : "blue";
+}
+
+function stringID(value) {
+  if (!value) return uuid();
+  if (typeof value === "string") return value;
+  if (value.uuidString) return value.uuidString;
+  return String(value);
 }
 
 function toast(message) {
