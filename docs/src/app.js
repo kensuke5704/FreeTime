@@ -23,7 +23,7 @@ const colorNames = Object.keys(planColors);
 const views = ["home", "week", "tasks", "templates", "stats"];
 
 let state = loadState();
-let currentView = "home";
+let currentView = viewFromHash();
 let modal = null;
 let today = startOfDay(new Date());
 
@@ -181,6 +181,49 @@ function freeMinutesOn(date) {
   return Math.max(0, 1440 - occupied);
 }
 
+function plannedMinutesOn(date, kind = null) {
+  return plansOn(date)
+    .filter(plan => !kind || plan.kind === kind)
+    .reduce((sum, plan) => sum + minutesBetween(
+      new Date(Math.max(new Date(plan.start), startOfDay(date))),
+      new Date(Math.min(new Date(plan.end), addMinutes(startOfDay(date), 1440)))
+    ), 0);
+}
+
+function freeIntervalsOn(date) {
+  const dayStart = startOfDay(date);
+  const dayEnd = addMinutes(dayStart, 1440);
+  const slots = [];
+  let cursor = dayStart;
+  for (const interval of mergedBusyIntervals(date)) {
+    if (cursor < interval.start) slots.push({ start: cursor, end: interval.start });
+    cursor = new Date(Math.max(cursor, interval.end));
+  }
+  if (cursor < dayEnd) slots.push({ start: cursor, end: dayEnd });
+  return slots;
+}
+
+function nextFreeInterval(date = new Date()) {
+  const now = new Date(date);
+  return freeIntervalsOn(now)
+    .map(interval => {
+      const start = new Date(Math.max(interval.start, now));
+      return {
+        start,
+        end: selectableFreeEnd(startOfDay(now), interval.end)
+      };
+    })
+    .find(interval => interval.end > interval.start);
+}
+
+function selectableFreeEnd(day, end) {
+  const dayEnd = addMinutes(startOfDay(day), 1440);
+  if (new Date(end).getTime() === dayEnd.getTime()) {
+    return addMinutes(dayEnd, -5);
+  }
+  return end;
+}
+
 function freeIntervalContaining(date, selectedDate) {
   const dayStart = startOfDay(date);
   const dayEnd = addMinutes(dayStart, 1440);
@@ -284,6 +327,7 @@ function renderHome() {
   const plans = plansOn(today);
   const onPlans = plans.filter(plan => plan.kind === "on");
   const upcoming = upcomingPlan();
+  const free = nextFreeInterval();
   const urgentTasks = state.tasks
     .filter(task => !task.isCompleted)
     .sort((a, b) => new Date(a.deadline || "2999-01-01") - new Date(b.deadline || "2999-01-01"))
@@ -295,7 +339,13 @@ function renderHome() {
         <div class="hero-copy">
           <div class="metric-label">今日の空き時間</div>
           <div class="metric-value">${durationText(freeMinutesOn(today))}</div>
-          <p class="muted">${upcoming ? `次は ${timeText(upcoming.start)} の「${escapeHtml(upcoming.title)}」です。` : "この後の予定はありません。"}</p>
+          <p class="muted">${upcoming ? `次は ${timeText(upcoming.start)} の「${escapeHtml(upcoming.title)}」です。` : "この後の未開始予定はありません。"}</p>
+        </div>
+        <div class="next-card">
+          <div class="metric-label">次に使える空き枠</div>
+          <strong>${free ? `${timeText(free.start)}–${timeText(free.end)}` : "なし"}</strong>
+          <span>${free ? durationText(minutesBetween(free.start, free.end)) : "今日はすべて埋まっています"}</span>
+          ${free ? `<button class="button primary compact" data-action="add-plan-from-free" data-start="${free.start.toISOString()}" data-end="${free.end.toISOString()}">この枠に予定を入れる</button>` : ""}
         </div>
         <div class="mini-stats">
           <div><span>${plans.length}</span><small>予定</small></div>
@@ -322,11 +372,19 @@ function renderHome() {
 
 function renderWeek() {
   const dates = weekDates(today);
+  const totalFree = dates.reduce((sum, date) => sum + freeMinutesOn(date), 0);
+  const totalOn = dates.reduce((sum, date) => sum + plannedMinutesOn(date, "on"), 0);
+  const busiest = [...dates].sort((a, b) => freeMinutesOn(a) - freeMinutesOn(b))[0];
   return `
     <div class="card">
       <div class="section-title">
         <h2>週間</h2>
         <span class="small muted">各日の空き時間をクリックすると、その連続空き時間で予定追加します</span>
+      </div>
+      <div class="week-summary">
+        <div><span>${durationText(totalFree)}</span><small>週の空き時間</small></div>
+        <div><span>${durationText(totalOn)}</span><small>ON予定</small></div>
+        <div><span>${dateText(busiest)}</span><small>一番埋まっている日</small></div>
       </div>
       <div class="week-grid">
         ${dates.map((date, index) => `
@@ -424,12 +482,16 @@ function renderTimeline(date, plans, id, extraClass = "") {
     const end = Math.min(new Date(plan.end), addMinutes(dayStart, 1440));
     const left = minutesSinceDayStart(start, dayStart) / 1440 * 100;
     const width = Math.max(0.4, (minutesSinceDayStart(end, dayStart) - minutesSinceDayStart(start, dayStart)) / 1440 * 100);
+    const compact = width < 10;
+    const compactLabel = Array.from(plan.title || "予定").slice(0, 2).join("");
     return `
-      <button class="plan-block ${plan.kind === "off" ? "off" : ""}"
+      <button class="plan-block ${plan.kind === "off" ? "off" : ""} ${compact ? "compact-plan" : ""}"
         data-action="edit-plan"
         data-plan-id="${plan.id}"
+        title="${escapeAttr(`${plan.title} ${timeText(plan.start)}–${timeText(plan.end)}`)}"
         style="left:${left}%;width:${width}%;background:${plan.kind === "off" ? "" : planColors[plan.color]}">
-        ${escapeHtml(plan.title)}
+        <span>${escapeHtml(compact ? compactLabel : plan.title)}</span>
+        ${compact ? "" : `<small>${timeText(plan.start)}–${timeText(plan.end)}</small>`}
       </button>
     `;
   }).join("");
@@ -474,6 +536,11 @@ function renderTaskRow(task) {
 function renderTabs(position = "bottom") {
   const labels = { home: "ホーム", week: "週間", tasks: "課題", templates: "テンプレート", stats: "集計" };
   return `<nav class="tabs ${position === "side" ? "side-tabs" : "bottom-tabs"}">${views.map(view => `<button class="tab ${currentView === view ? "active" : ""}" data-view="${view}">${labels[view]}</button>`).join("")}</nav>`;
+}
+
+function viewFromHash() {
+  const hash = location.hash.replace("#", "");
+  return views.includes(hash) ? hash : "home";
 }
 
 function renderModal() {
@@ -574,6 +641,9 @@ function bindEvents() {
   document.querySelectorAll("[data-view]").forEach(button => {
     button.addEventListener("click", () => {
       currentView = button.dataset.view;
+      if (location.hash !== `#${currentView}`) {
+        history.pushState(null, "", `#${currentView}`);
+      }
       render();
     });
   });
@@ -582,6 +652,9 @@ function bindEvents() {
     el.addEventListener("click", event => {
       const action = el.dataset.action;
       if (action === "add-plan") openPlanModal();
+      if (action === "add-plan-from-free") {
+        openPlanModal(null, { start: new Date(el.dataset.start), end: new Date(el.dataset.end) });
+      }
       if (action === "add-task") openTaskModal();
       if (action === "edit-plan") {
         event.stopPropagation();
@@ -621,6 +694,11 @@ function bindEvents() {
   document.querySelector('[data-form="plan"]')?.addEventListener("submit", savePlanFromForm);
   document.querySelector('[data-form="task"]')?.addEventListener("submit", saveTaskFromForm);
 }
+
+window.addEventListener("hashchange", () => {
+  currentView = viewFromHash();
+  render();
+});
 
 function handleTimelineClick(event, el) {
   if (event.target.closest(".plan-block")) return;
