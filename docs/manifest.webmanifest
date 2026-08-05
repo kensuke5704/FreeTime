@@ -1,0 +1,10 @@
+{
+  "name": "FreeTime",
+  "short_name": "FreeTime",
+  "description": "予定と空き時間を管理するWebアプリ",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#2563eb",
+  "icons": []
+}
