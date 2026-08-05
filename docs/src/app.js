@@ -1,4 +1,5 @@
 import { migratedState } from "./migrated-data.js";
+import { GOOGLE_CLIENT_ID, GOOGLE_SYNC_FILE_NAME } from "./google-config.js";
 
 const STORE_KEY = "freeTimeWebStore.v1";
 const MIGRATED_MARK_KEY = "freeTimeWebStore.migrated.v1";
@@ -26,6 +27,10 @@ let state = loadState();
 let currentView = viewFromHash();
 let modal = null;
 let today = startOfDay(new Date());
+let googleSync = {
+  accessToken: null,
+  fileId: null
+};
 
 function uuid() {
   return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -285,6 +290,7 @@ function render() {
             <h2>${currentViewTitle()}</h2>
           </div>
           <div class="top-actions">
+            <button class="button sync-button" data-action="google-sync">Google同期</button>
             <label class="button import-button">
               読み込み
               <input type="file" accept="application/json,.json" data-action="import" hidden />
@@ -765,6 +771,7 @@ function bindEvents() {
       if (action === "close-modal") closeModal();
       if (action === "delete-plan") deletePlan(el.dataset.planId);
       if (action === "delete-task") deleteTask(el.dataset.taskId);
+      if (action === "google-sync") syncWithGoogle();
       if (action === "export") exportBackup();
       if (action === "timeline-click") handleTimelineClick(event, el);
     });
@@ -959,6 +966,157 @@ async function importBackupFromInput(event) {
   } finally {
     event.currentTarget.value = "";
   }
+}
+
+async function syncWithGoogle() {
+  if (!GOOGLE_CLIENT_ID) {
+    toast("Google Client IDを設定してください");
+    return;
+  }
+
+  try {
+    await ensureGoogleAccessToken();
+    const file = await findGoogleSyncFile();
+    googleSync.fileId = file?.id ?? null;
+
+    if (file) {
+      const shouldLoad = confirm("Googleに同期データがあります。読み込みますか？\n\nOK: Googleのデータをこの端末へ読み込み\nキャンセル: この端末のデータをGoogleへ保存");
+      if (shouldLoad) {
+        await loadFromGoogleSyncFile(file.id);
+        toast("Googleから読み込みました");
+      } else {
+        await saveToGoogleSyncFile();
+        toast("Googleへ保存しました");
+      }
+      return;
+    }
+
+    await saveToGoogleSyncFile();
+    toast("Googleへ保存しました");
+  } catch (error) {
+    console.error(error);
+    toast("Google同期に失敗しました");
+  }
+}
+
+function ensureGoogleAccessToken() {
+  if (googleSync.accessToken) return Promise.resolve(googleSync.accessToken);
+
+  return new Promise((resolve, reject) => {
+    waitForGoogleIdentity()
+      .then(() => {
+        const tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: "https://www.googleapis.com/auth/drive.appdata",
+          callback: response => {
+            if (response.error) {
+              reject(new Error(response.error));
+              return;
+            }
+            googleSync.accessToken = response.access_token;
+            resolve(response.access_token);
+          }
+        });
+        tokenClient.requestAccessToken({ prompt: "consent" });
+      })
+      .catch(reject);
+  });
+}
+
+function waitForGoogleIdentity() {
+  if (window.google?.accounts?.oauth2) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const started = Date.now();
+    const timer = setInterval(() => {
+      if (window.google?.accounts?.oauth2) {
+        clearInterval(timer);
+        resolve();
+      } else if (Date.now() - started > 8000) {
+        clearInterval(timer);
+        reject(new Error("Google Identity Servicesの読み込みに失敗しました"));
+      }
+    }, 100);
+  });
+}
+
+async function findGoogleSyncFile() {
+  const query = encodeURIComponent(`name='${GOOGLE_SYNC_FILE_NAME.replaceAll("'", "\\'")}'`);
+  const params = `spaces=appDataFolder&q=${query}&fields=files(id,name,modifiedTime)&pageSize=1`;
+  const response = await googleFetch(`https://www.googleapis.com/drive/v3/files?${params}`);
+  const json = await response.json();
+  return json.files?.[0] ?? null;
+}
+
+async function loadFromGoogleSyncFile(fileId) {
+  const response = await googleFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
+  const json = await response.json();
+  state = normalizeImportedState(json.state ?? json);
+  saveState();
+  render();
+}
+
+async function saveToGoogleSyncFile() {
+  const payload = JSON.stringify({
+    app: "FreeTime",
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    state
+  });
+
+  if (googleSync.fileId) {
+    await googleFetch(`https://www.googleapis.com/upload/drive/v3/files/${googleSync.fileId}?uploadType=media`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: payload
+    });
+    return;
+  }
+
+  const boundary = `freetime-${Date.now()}`;
+  const metadata = JSON.stringify({
+    name: GOOGLE_SYNC_FILE_NAME,
+    parents: ["appDataFolder"]
+  });
+  const body = [
+    `--${boundary}`,
+    "Content-Type: application/json; charset=UTF-8",
+    "",
+    metadata,
+    `--${boundary}`,
+    "Content-Type: application/json",
+    "",
+    payload,
+    `--${boundary}--`
+  ].join("\r\n");
+
+  const response = await googleFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id", {
+    method: "POST",
+    headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
+    body
+  });
+  const json = await response.json();
+  googleSync.fileId = json.id;
+}
+
+async function googleFetch(url, options = {}) {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers ?? {}),
+      Authorization: `Bearer ${googleSync.accessToken}`
+    }
+  });
+
+  if (response.status === 401) {
+    googleSync.accessToken = null;
+    await ensureGoogleAccessToken();
+    return googleFetch(url, options);
+  }
+
+  if (!response.ok) {
+    throw new Error(`Google API error: ${response.status}`);
+  }
+  return response;
 }
 
 function normalizeImportedState(input) {
