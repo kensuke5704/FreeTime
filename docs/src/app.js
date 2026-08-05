@@ -1,11 +1,24 @@
 import { migratedState } from "./migrated-data.js";
-import { GOOGLE_CLIENT_ID, GOOGLE_SYNC_FILE_NAME } from "./google-config.js";
+import {
+  FIREBASE_CONFIG,
+  FIREBASE_SYNC_COLLECTION,
+  FIREBASE_SYNC_DOCUMENT,
+  SHARED_EMAILS
+} from "./google-config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { doc, getFirestore, onSnapshot, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const STORE_KEY = "freeTimeWebStore.v1";
 const MIGRATED_MARK_KEY = "freeTimeWebStore.migrated.v1";
-const GOOGLE_CLIENT_ID_KEY = "freeTimeWebStore.googleClientId.v1";
 const GOOGLE_ACCOUNT_EMAIL_KEY = "freeTimeWebStore.googleAccountEmail.v1";
 const APPLE_REFERENCE_DATE_MS = Date.UTC(2001, 0, 1, 0, 0, 0);
+
+const firebaseApp = initializeApp(FIREBASE_CONFIG);
+const firebaseAuth = getAuth(firebaseApp);
+const googleProvider = new GoogleAuthProvider();
+const firestore = getFirestore(firebaseApp);
+const cloudDocument = doc(firestore, FIREBASE_SYNC_COLLECTION, FIREBASE_SYNC_DOCUMENT);
 
 const planColors = {
   blue: "#2563eb",
@@ -30,13 +43,13 @@ let currentView = viewFromHash();
 let modal = null;
 let today = startOfDay(new Date());
 let googleSync = {
-  accessToken: null,
-  fileId: null,
-  autoEnabled: false,
+  user: null,
+  unsubscribe: null,
+  cloudReady: false,
   isSaving: false,
-  pendingSave: false,
+  pendingLocalChange: false,
   saveTimer: null,
-  lastSyncedState: "",
+  lastSyncedState: stateSignature(state),
   status: "signed-out",
   statusMessage: "Google未接続"
 };
@@ -85,48 +98,46 @@ function seedState() {
 function saveState({ sync = true } = {}) {
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
   if (sync) {
+    if (googleSync.user) googleSync.pendingLocalChange = true;
     scheduleAutoGoogleSync();
   }
 }
 
 function scheduleAutoGoogleSync() {
-  if (!googleSync.autoEnabled || !googleSync.accessToken) return;
+  if (!googleSync.user || !googleSync.cloudReady) return;
   clearTimeout(googleSync.saveTimer);
-  googleSync.pendingSave = true;
   googleSync.saveTimer = setTimeout(() => {
     autoSaveToGoogle();
   }, 900);
 }
 
 async function autoSaveToGoogle() {
-  if (!googleSync.autoEnabled || !googleSync.accessToken) return;
-  const snapshot = JSON.stringify(state);
+  if (!googleSync.user || !googleSync.cloudReady) return;
+  const snapshot = stateSignature(state);
   if (snapshot === googleSync.lastSyncedState) {
-    googleSync.pendingSave = false;
+    googleSync.pendingLocalChange = false;
     updateGoogleSyncStatus();
     return;
   }
   if (googleSync.isSaving) {
-    googleSync.pendingSave = true;
+    googleSync.pendingLocalChange = true;
     return;
   }
 
   googleSync.isSaving = true;
-  googleSync.pendingSave = false;
   setGoogleSyncStatus("saving", "Googleへ保存中");
 
   try {
-    await saveToGoogleSyncFile({ interactive: false });
+    await saveToGoogleSyncFile();
     googleSync.lastSyncedState = snapshot;
-    setGoogleSyncStatus("saved", "Googleへ保存済み");
+    googleSync.pendingLocalChange = false;
+    setGoogleSyncStatus("saved", "同期済み");
   } catch (error) {
     console.error(error);
-    googleSync.autoEnabled = false;
-    googleSync.accessToken = null;
-    setGoogleSyncStatus("error", "再ログインが必要");
+    setGoogleSyncStatus("error", "同期に失敗");
   } finally {
     googleSync.isSaving = false;
-    if (googleSync.pendingSave) {
+    if (googleSync.pendingLocalChange) {
       scheduleAutoGoogleSync();
     } else {
       updateGoogleSyncStatus();
@@ -348,7 +359,7 @@ function render() {
           </div>
           <div class="top-actions">
             <div class="sync-cluster">
-              <button class="button sync-button" data-action="google-sync">Google同期</button>
+              <button class="button sync-button" data-action="google-sync">${renderGoogleSyncButtonLabel()}</button>
               ${renderGoogleSyncStatus()}
             </div>
             <label class="button import-button">
@@ -368,6 +379,12 @@ function render() {
   `;
   bindEvents();
   updateGoogleSyncStatus();
+}
+
+function renderGoogleSyncButtonLabel() {
+  if (googleSync.status === "connecting") return "接続中…";
+  if (googleSync.user) return "ログアウト";
+  return "Googleで同期";
 }
 
 function renderGoogleSyncStatus() {
@@ -1034,45 +1051,24 @@ async function importBackupFromInput(event) {
 }
 
 async function syncWithGoogle() {
-  const clientId = ensureGoogleClientId();
-  if (!clientId) {
-    return;
-  }
-
   try {
-    setGoogleSyncStatus("saving", "Googleに接続中");
-    await ensureGoogleAccessToken();
-    const file = await findGoogleSyncFile();
-    googleSync.fileId = file?.id ?? null;
-
-    if (file) {
-      const shouldLoad = confirm("Googleに同期データがあります。読み込みますか？\n\nOK: Googleのデータをこの端末へ読み込み\nキャンセル: この端末のデータをGoogleへ保存");
-      if (shouldLoad) {
-        await loadFromGoogleSyncFile(file.id);
-        toast("Googleから読み込みました");
-      } else {
-        await saveToGoogleSyncFile();
-        toast("Googleへ保存しました");
-      }
-      enableAutoGoogleSync();
+    if (googleSync.user) {
+      await signOutFromGoogleSync();
       return;
     }
-
-    await saveToGoogleSyncFile();
-    enableAutoGoogleSync();
-    toast("Googleへ保存しました");
+    setGoogleSyncStatus("connecting", "Googleに接続中");
+    await signInWithPopup(firebaseAuth, googleProvider);
   } catch (error) {
     console.error(error);
-    googleSync.autoEnabled = false;
-    setGoogleSyncStatus("error", "Google同期に失敗");
-    toast(error.message?.includes("Googleアカウントが違います") ? "指定したGoogleアカウントでログインしてください" : "Google同期に失敗しました");
+    setGoogleSyncStatus("error", "Googleログインに失敗");
+    toast("Googleログインに失敗しました");
   }
 }
 
-function enableAutoGoogleSync() {
-  googleSync.autoEnabled = true;
-  googleSync.lastSyncedState = JSON.stringify(state);
-  setGoogleSyncStatus("saved", "Googleへ保存済み");
+async function signOutFromGoogleSync() {
+  setGoogleSyncStatus("connecting", "ログアウト中");
+  await signOut(firebaseAuth);
+  toast("Google同期を解除しました");
 }
 
 function setGoogleSyncStatus(status, message) {
@@ -1083,218 +1079,124 @@ function setGoogleSyncStatus(status, message) {
 
 function updateGoogleSyncStatus() {
   const el = document.querySelector("[data-google-sync-status]");
-  if (!el) return;
-  const label = el.querySelector("[data-google-sync-label]");
+  const button = document.querySelector("[data-action='google-sync']");
   const email = googleAccountEmail();
   let status = googleSync.status;
   let message = googleSync.statusMessage;
 
   if (googleSync.isSaving) {
     status = "saving";
-    message = "Googleへ保存中";
-  } else if (googleSync.autoEnabled && googleSync.accessToken) {
+    message = "同期中";
+  } else if (googleSync.user && googleSync.cloudReady && googleSync.status !== "error") {
     status = "signed-in";
     message = email ? `${email} で同期中` : "Googleログイン中";
-  } else if (!googleSync.accessToken && googleSync.status !== "error") {
+  } else if (!googleSync.user && googleSync.status !== "error" && googleSync.status !== "connecting") {
     status = "signed-out";
-    message = email ? "Google再ログイン待ち" : "Google未接続";
+    message = email ? "Google未接続" : "Google未接続";
   }
 
-  el.className = `sync-status ${status}`;
-  if (label) label.textContent = message;
-}
-
-function ensureGoogleClientId() {
-  const current = googleClientId();
-  if (current) return current;
-
-  const input = prompt([
-    "Google OAuth Client IDを入力してください。",
-    "",
-    "Google Cloud Consoleで作成したウェブアプリ用Client IDです。",
-    "予定データは公開されず、Google Driveの非公開アプリ領域に保存されます。"
-  ].join("\n"));
-
-  const normalized = input?.trim();
-  if (!normalized) {
-    toast("Google Client IDが未設定です");
-    return "";
+  if (el) {
+    const label = el.querySelector("[data-google-sync-label]");
+    el.className = `sync-status ${status}`;
+    if (label) label.textContent = message;
   }
-
-  localStorage.setItem(GOOGLE_CLIENT_ID_KEY, normalized);
-  toast("Google Client IDを保存しました");
-  return normalized;
-}
-
-function ensureGoogleAccountEmail() {
-  return googleAccountEmail();
+  if (button) button.textContent = renderGoogleSyncButtonLabel();
 }
 
 function googleAccountEmail() {
-  return localStorage.getItem(GOOGLE_ACCOUNT_EMAIL_KEY)?.trim().toLowerCase() || "";
+  return googleSync.user?.email?.toLowerCase() || localStorage.getItem(GOOGLE_ACCOUNT_EMAIL_KEY)?.trim().toLowerCase() || "";
 }
 
-function googleClientId() {
-  return localStorage.getItem(GOOGLE_CLIENT_ID_KEY)?.trim() || GOOGLE_CLIENT_ID.trim();
+function isSharedUser(user) {
+  const email = user?.email?.toLowerCase();
+  return Boolean(email && SHARED_EMAILS.map(value => value.toLowerCase()).includes(email));
 }
 
-function ensureGoogleAccessToken() {
-  if (googleSync.accessToken) return Promise.resolve(googleSync.accessToken);
-
-  const clientId = ensureGoogleClientId();
-  if (!clientId) return Promise.reject(new Error("Google Client ID is not configured"));
-
-  return new Promise((resolve, reject) => {
-    waitForGoogleIdentity()
-      .then(() => {
-        const tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: clientId,
-          scope: "https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email",
-          login_hint: googleAccountEmail(),
-          callback: async response => {
-            if (response.error) {
-              reject(new Error(response.error));
-              return;
-            }
-            googleSync.accessToken = response.access_token;
-            try {
-              await verifyGoogleAccount();
-              resolve(response.access_token);
-            } catch (error) {
-              googleSync.accessToken = null;
-              reject(error);
-            }
-          }
-        });
-        tokenClient.requestAccessToken({
-          prompt: "consent",
-          login_hint: googleAccountEmail()
-        });
-      })
-      .catch(reject);
-  });
+function cloudSnapshot(input = state) {
+  return {
+    plans: Array.isArray(input.plans) ? input.plans : [],
+    tasks: Array.isArray(input.tasks) ? input.tasks : [],
+    templates: Array.isArray(input.templates) ? input.templates : []
+  };
 }
 
-function waitForGoogleIdentity() {
-  if (window.google?.accounts?.oauth2) return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    const started = Date.now();
-    const timer = setInterval(() => {
-      if (window.google?.accounts?.oauth2) {
-        clearInterval(timer);
-        resolve();
-      } else if (Date.now() - started > 8000) {
-        clearInterval(timer);
-        reject(new Error("Google Identity Servicesの読み込みに失敗しました"));
-      }
-    }, 100);
-  });
+function stateSignature(input = state) {
+  return JSON.stringify(cloudSnapshot(input));
 }
 
-async function findGoogleSyncFile() {
-  const query = encodeURIComponent(`name='${GOOGLE_SYNC_FILE_NAME.replaceAll("'", "\\'")}'`);
-  const params = `spaces=appDataFolder&q=${query}&fields=files(id,name,modifiedTime)&pageSize=1`;
-  const response = await googleFetch(`https://www.googleapis.com/drive/v3/files?${params}`);
-  const json = await response.json();
-  return json.files?.[0] ?? null;
-}
-
-async function verifyGoogleAccount() {
-  const expected = googleAccountEmail();
-
-  const response = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-    headers: {
-      Authorization: `Bearer ${googleSync.accessToken}`
-    }
-  });
-  if (!response.ok) {
-    throw new Error(`Google account verification failed: ${response.status}`);
-  }
-  const profile = await response.json();
-  const actual = String(profile.email || "").toLowerCase();
-  if (!expected && actual) {
-    localStorage.setItem(GOOGLE_ACCOUNT_EMAIL_KEY, actual);
-    toast(`${actual} と同期します`);
-    return;
-  }
-  if (actual !== expected) {
-    throw new Error(`Googleアカウントが違います: ${actual || "不明"}`);
-  }
-}
-
-async function loadFromGoogleSyncFile(fileId) {
-  const response = await googleFetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`);
-  const json = await response.json();
-  state = normalizeImportedState(json.state ?? json);
-  saveState({ sync: false });
-  render();
-}
-
-async function saveToGoogleSyncFile({ interactive = true } = {}) {
-  const payload = JSON.stringify({
+async function saveToGoogleSyncFile() {
+  await setDoc(cloudDocument, {
     app: "FreeTime",
     version: 1,
-    updatedAt: new Date().toISOString(),
-    state
+    state: cloudSnapshot(state),
+    updatedAt: serverTimestamp(),
+    updatedBy: googleSync.user?.email ?? null
   });
-
-  if (googleSync.fileId) {
-    await googleFetch(`https://www.googleapis.com/upload/drive/v3/files/${googleSync.fileId}?uploadType=media`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: payload
-    }, { interactive });
-    return;
-  }
-
-  const boundary = `freetime-${Date.now()}`;
-  const metadata = JSON.stringify({
-    name: GOOGLE_SYNC_FILE_NAME,
-    parents: ["appDataFolder"]
-  });
-  const body = [
-    `--${boundary}`,
-    "Content-Type: application/json; charset=UTF-8",
-    "",
-    metadata,
-    `--${boundary}`,
-    "Content-Type: application/json",
-    "",
-    payload,
-    `--${boundary}--`
-  ].join("\r\n");
-
-  const response = await googleFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id", {
-    method: "POST",
-    headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
-    body
-  }, { interactive });
-  const json = await response.json();
-  googleSync.fileId = json.id;
 }
 
-async function googleFetch(url, options = {}, { interactive = true } = {}) {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...(options.headers ?? {}),
-      Authorization: `Bearer ${googleSync.accessToken}`
+function initGoogleCloudSync() {
+  onAuthStateChanged(firebaseAuth, user => {
+    if (googleSync.unsubscribe) {
+      googleSync.unsubscribe();
+      googleSync.unsubscribe = null;
     }
+
+    googleSync.user = user;
+    googleSync.cloudReady = false;
+    googleSync.pendingLocalChange = false;
+    googleSync.isSaving = false;
+
+    if (!user) {
+      setGoogleSyncStatus("signed-out", "Google未接続");
+      return;
+    }
+
+    if (!isSharedUser(user)) {
+      localStorage.setItem(GOOGLE_ACCOUNT_EMAIL_KEY, user.email ?? "");
+      setGoogleSyncStatus("error", "許可されたGoogleアカウントではありません");
+      signOut(firebaseAuth).catch(console.error);
+      toast("指定したGoogleアカウントでログインしてください");
+      return;
+    }
+
+    localStorage.setItem(GOOGLE_ACCOUNT_EMAIL_KEY, user.email ?? "");
+    setGoogleSyncStatus("connecting", "同期データを確認中");
+
+    googleSync.unsubscribe = onSnapshot(cloudDocument, snapshot => {
+      const localSignature = stateSignature(state);
+
+      if (!snapshot.exists()) {
+        googleSync.cloudReady = true;
+        googleSync.pendingLocalChange = true;
+        scheduleAutoGoogleSync();
+        return;
+      }
+
+      const remoteState = normalizeImportedState(snapshot.data().state ?? snapshot.data());
+      const remoteSignature = stateSignature(remoteState);
+
+      if (googleSync.pendingLocalChange && localSignature !== remoteSignature) {
+        googleSync.cloudReady = true;
+        scheduleAutoGoogleSync();
+        return;
+      }
+
+      if (remoteSignature !== localSignature) {
+        state = remoteState;
+        saveState({ sync: false });
+        render();
+      }
+
+      googleSync.cloudReady = true;
+      googleSync.lastSyncedState = remoteSignature;
+      googleSync.pendingLocalChange = false;
+      setGoogleSyncStatus("signed-in", `${googleAccountEmail()} で同期中`);
+    }, error => {
+      console.error(error);
+      setGoogleSyncStatus("error", "同期データを読めません");
+      toast("Google同期データの読み込みに失敗しました");
+    });
   });
-
-  if (response.status === 401) {
-    googleSync.accessToken = null;
-    if (!interactive) {
-      throw new Error("Google token expired");
-    }
-    await ensureGoogleAccessToken();
-    return googleFetch(url, options, { interactive });
-  }
-
-  if (!response.ok) {
-    throw new Error(`Google API error: ${response.status}`);
-  }
-  return response;
 }
 
 function normalizeImportedState(input) {
@@ -1392,3 +1294,4 @@ function escapeAttr(value) {
 }
 
 render();
+initGoogleCloudSync();

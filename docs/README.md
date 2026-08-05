@@ -5,28 +5,21 @@ GitHub Pages 用の静的 Web 版です。
 - `docs/index.html` を GitHub Pages の公開ルートにします。
 - データはブラウザの `localStorage` に保存されます。
 - 右上の「読み込み」から、iOS版の自動バックアップJSONまたはWeb版バックアップJSONを取り込めます。
-- 右上の「Google同期」から、Google Drive の非公開アプリデータ領域に保存して別デバイスへ同期できます。
+- 右上の「Googleで同期」からGoogleログインし、Firestoreの非公開同期ドキュメント経由で別デバイスへ同期できます。
 - 空き時間をクリックすると、連続した空き時間の開始〜終了を初期値にして予定追加画面を開きます。
 - 空き時間の終了が 0:00 の場合、予定追加時の終了時刻は 23:55 になります。
 
 ## Google同期
 
-既存予定データをGitHub Pagesの公開ファイルに含めず、Googleアカウントごとの非公開領域へ保存します。
+既存予定データをGitHub Pagesの公開ファイルに含めず、financeアプリと同じFirebase Auth + Firestore方式で保存します。
 
-1. Google Cloud ConsoleでOAuth 2.0 クライアントID（ウェブアプリ）を作成します。
-2. 承認済みのJavaScript生成元に以下を追加します。
-   - `https://kensuke5704.github.io`
-   - `http://localhost:4173`
-3. Google Drive APIを有効化します。
-4. サイト右上の「Google同期」を押し、表示された入力欄にクライアントIDを貼り付けます。
-   - コード側に固定したい場合は、`docs/src/google-config.js` の `GOOGLE_CLIENT_ID` に設定することもできます。
-5. サイト右上の「読み込み」で既存JSONを取り込みます。
-6. 「Google同期」を押すと、Google Drive の `appDataFolder` に保存されます。
-7. 別デバイスでは同じGoogleアカウントで「Google同期」を押し、同じクライアントIDを入力してGoogle側のデータを読み込みます。
+1. サイト右上の「Googleで同期」を押してGoogleログインします。
+2. 初回ログイン後はFirebase Authがブラウザ内にログイン状態を保持します。
+3. 同期中に予定・課題・テンプレートを編集すると、Firestoreの `shared/freetime` ドキュメントへ自動保存されます。
+4. 別デバイスでも同じGoogleアカウントでログインすると、同じ同期データが表示されます。
 
-`appDataFolder` のデータは通常のDriveファイル一覧には表示されず、このアプリが要求する権限でのみ読み書きされます。
-入力したクライアントIDは各ブラウザの `localStorage` に保存されます。これは識別子であり、予定データや秘密鍵ではありません。
-同期時にはログイン中のGoogleアカウントのメールアドレスを確認し、設定した同期アカウントと違う場合は保存/読み込みを止めます。
+同期対象のGoogleアカウントは `docs/src/google-config.js` の `SHARED_EMAILS` で制限しています。
+予定データはGitHub Pagesの公開ファイルには含まれません。
 
 ## GitHub Pages 設定
 
