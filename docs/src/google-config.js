@@ -3,7 +3,7 @@
 // 承認済みのJavaScript生成元には以下を追加します:
 // - https://kensuke5704.github.io
 // - http://localhost:4173
-export const GOOGLE_CLIENT_ID = "";
+export const GOOGLE_CLIENT_ID = "189181380819-eq3qqma50mjvo33s6knr4utc70lchseu.apps.googleusercontent.com";
 
 // Google DriveのappDataFolder内に保存する非公開同期ファイル名です。
 export const GOOGLE_SYNC_FILE_NAME = "freetime-web-store.json";
