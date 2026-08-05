@@ -171,6 +171,7 @@ button { cursor: pointer; }
   align-content: center;
   gap: 3px;
   min-width: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
 
 .plan-block span,
@@ -190,6 +191,12 @@ button { cursor: pointer; }
   text-align: center;
   justify-items: center;
   padding-inline: 5px;
+}
+
+.plan-block.dot-plan {
+  padding-inline: 0;
+  font-size: 16px;
+  letter-spacing: 0;
 }
 
 .plan-block.off {
@@ -214,6 +221,81 @@ button { cursor: pointer; }
 }
 
 .row:hover { border-color: #93c5fd; }
+
+.task-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.task-overview div {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  background: #f8fafc;
+}
+
+.task-overview strong {
+  display: block;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.task-overview span {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.task-section {
+  display: grid;
+  gap: 10px;
+}
+
+.task-section h3 {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.task-row.completed {
+  opacity: 0.64;
+  background: #f8fafc;
+}
+
+.task-row.completed .row-title {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: #94a3b8;
+}
+
+.status-pill {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.completed-tasks {
+  margin-top: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.completed-tasks summary {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
 
 .color-bar {
   width: 5px;

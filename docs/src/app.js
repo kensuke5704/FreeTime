@@ -402,13 +402,33 @@ function renderWeek() {
 }
 
 function renderTasks() {
-  const tasks = [...state.tasks].sort((a, b) => Number(a.isCompleted) - Number(b.isCompleted));
+  const tasks = [...state.tasks].sort(compareTasks);
+  const incomplete = tasks.filter(task => !task.isCompleted);
+  const completed = tasks.filter(task => task.isCompleted);
   return `
     <div class="card">
       <div class="section-title"><h2>課題</h2><button class="button primary" data-action="add-task">課題を追加</button></div>
-      <div class="list">
-        ${tasks.length ? tasks.map(renderTaskRow).join("") : `<div class="empty">課題はありません</div>`}
-      </div>
+      ${tasks.length ? `
+        <div class="task-overview">
+          <div><strong>${incomplete.length}</strong><span>未完了</span></div>
+          <div><strong>${completed.length}</strong><span>完了済み</span></div>
+          <div><strong>${durationText(incomplete.reduce((sum, task) => sum + remainingMinutesForTask(task), 0))}</strong><span>残り見積</span></div>
+        </div>
+        <div class="task-section">
+          <h3>今見る課題</h3>
+          <div class="list">
+            ${incomplete.length ? incomplete.map(renderTaskRow).join("") : `<div class="empty">未完了の課題はありません</div>`}
+          </div>
+        </div>
+        ${completed.length ? `
+          <details class="completed-tasks">
+            <summary>完了済み ${completed.length}件</summary>
+            <div class="list">
+              ${completed.map(renderTaskRow).join("")}
+            </div>
+          </details>
+        ` : ""}
+      ` : `<div class="empty">課題はありません</div>`}
     </div>
   `;
 }
@@ -517,15 +537,17 @@ function renderTimeline(date, plans, id, extraClass = "") {
     const end = Math.min(new Date(plan.end), addMinutes(dayStart, 1440));
     const left = minutesSinceDayStart(start, dayStart) / 1440 * 100;
     const width = Math.max(0.4, (minutesSinceDayStart(end, dayStart) - minutesSinceDayStart(start, dayStart)) / 1440 * 100);
-    const compact = width < 10;
+    const labelMode = width < 3.2 ? "dot" : width < 9 ? "short" : "full";
+    const compact = labelMode !== "full";
     const compactLabel = Array.from(plan.title || "予定").slice(0, 2).join("");
+    const visibleLabel = labelMode === "dot" ? "•" : labelMode === "short" ? compactLabel : plan.title;
     return `
-      <button class="plan-block ${plan.kind === "off" ? "off" : ""} ${compact ? "compact-plan" : ""}"
+      <button class="plan-block ${plan.kind === "off" ? "off" : ""} ${compact ? "compact-plan" : ""} ${labelMode === "dot" ? "dot-plan" : ""}"
         data-action="edit-plan"
         data-plan-id="${plan.id}"
         title="${escapeAttr(`${plan.title} ${timeText(plan.start)}–${timeText(plan.end)}`)}"
         style="left:${left}%;width:${width}%;background:${plan.kind === "off" ? "" : planColors[plan.color]}">
-        <span>${escapeHtml(compact ? compactLabel : plan.title)}</span>
+        <span>${escapeHtml(visibleLabel)}</span>
         ${compact ? "" : `<small>${timeText(plan.start)}–${timeText(plan.end)}</small>`}
       </button>
     `;
@@ -554,18 +576,31 @@ function renderPlanList(plans) {
 }
 
 function renderTaskRow(task) {
-  const scheduled = scheduledMinutesForTask(task.id);
-  const remaining = Math.max(0, task.estimatedMinutes - task.completedMinutes - scheduled);
+  const remaining = remainingMinutesForTask(task);
   return `
-    <button class="row" data-action="edit-task" data-task-id="${task.id}">
+    <button class="row task-row ${task.isCompleted ? "completed" : ""}" data-action="edit-task" data-task-id="${task.id}">
       <span class="color-bar" style="background:${planColors[task.color]}"></span>
       <span class="row-main">
-        <span class="row-title">${escapeHtml(task.title)}${task.isCompleted ? " ✓" : ""}</span>
+        <span class="row-title">${escapeHtml(task.title)}</span>
         <span class="row-meta">${escapeHtml(task.category || "未分類")} ・ 残り ${durationText(remaining)} ・ ${task.deadline ? dateText(task.deadline) : "無期限"}</span>
       </span>
+      ${task.isCompleted ? `<span class="status-pill">完了</span>` : ""}
       <span class="muted">›</span>
     </button>
   `;
+}
+
+function remainingMinutesForTask(task) {
+  const scheduled = scheduledMinutesForTask(task.id);
+  return Math.max(0, task.estimatedMinutes - task.completedMinutes - scheduled);
+}
+
+function compareTasks(a, b) {
+  if (a.isCompleted !== b.isCompleted) return Number(a.isCompleted) - Number(b.isCompleted);
+  const aDate = a.deadline ? new Date(a.deadline).getTime() : Number.POSITIVE_INFINITY;
+  const bDate = b.deadline ? new Date(b.deadline).getTime() : Number.POSITIVE_INFINITY;
+  if (aDate !== bDate) return aDate - bDate;
+  return remainingMinutesForTask(b) - remainingMinutesForTask(a);
 }
 
 function renderTabs(position = "bottom") {
