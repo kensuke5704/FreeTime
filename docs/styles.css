@@ -199,6 +199,10 @@ button { cursor: pointer; }
   letter-spacing: 0;
 }
 
+.plan-block.no-label-plan {
+  padding-inline: 0;
+}
+
 .plan-block.off {
   background: repeating-linear-gradient(135deg, #475569 0, #475569 7px, #64748b 7px, #64748b 14px);
 }
@@ -476,6 +480,10 @@ button { cursor: pointer; }
 .field {
   display: grid;
   gap: 6px;
+}
+
+.plan-off-mode .on-only-field {
+  display: none;
 }
 
 .field label {

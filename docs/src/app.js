@@ -634,17 +634,17 @@ function renderTimeline(date, plans, id, extraClass = "") {
     const end = Math.min(new Date(plan.end), addMinutes(dayStart, 1440));
     const left = minutesSinceDayStart(start, dayStart) / 1440 * 100;
     const width = Math.max(0.4, (minutesSinceDayStart(end, dayStart) - minutesSinceDayStart(start, dayStart)) / 1440 * 100);
-    const labelMode = width < 3.2 ? "dot" : width < 9 ? "short" : "full";
+    const labelMode = timelineLabelMode(width);
     const compact = labelMode !== "full";
     const compactLabel = Array.from(plan.title || "予定").slice(0, 2).join("");
-    const visibleLabel = labelMode === "dot" ? "•" : labelMode === "short" ? compactLabel : plan.title;
+    const visibleLabel = labelMode === "none" ? "" : labelMode === "dot" ? "•" : labelMode === "short" ? compactLabel : plan.title;
     return `
-      <button class="plan-block ${plan.kind === "off" ? "off" : ""} ${compact ? "compact-plan" : ""} ${labelMode === "dot" ? "dot-plan" : ""}"
+      <button class="plan-block ${plan.kind === "off" ? "off" : ""} ${compact ? "compact-plan" : ""} ${labelMode === "dot" ? "dot-plan" : ""} ${labelMode === "none" ? "no-label-plan" : ""}"
         data-action="edit-plan"
         data-plan-id="${plan.id}"
         title="${escapeAttr(`${plan.title} ${timeText(plan.start)}–${timeText(plan.end)}`)}"
         style="left:${left}%;width:${width}%;background:${plan.kind === "off" ? "" : planColors[plan.color]}">
-        <span>${escapeHtml(visibleLabel)}</span>
+        ${visibleLabel ? `<span>${escapeHtml(visibleLabel)}</span>` : ""}
         ${compact ? "" : `<small>${timeText(plan.start)}–${timeText(plan.end)}</small>`}
       </button>
     `;
@@ -656,6 +656,17 @@ function renderTimeline(date, plans, id, extraClass = "") {
       ${items}
     </div>
   `;
+}
+
+function timelineLabelMode(widthPercent) {
+  if (window.matchMedia?.("(max-width: 620px)").matches) {
+    const estimatedTimelineWidth = Math.max(280, Math.min(360, window.innerWidth - 70));
+    const widthPx = estimatedTimelineWidth * widthPercent / 100;
+    if (widthPx < 52) return "none";
+    if (widthPx < 92) return "short";
+    return "full";
+  }
+  return widthPercent < 3.2 ? "dot" : widthPercent < 9 ? "short" : "full";
 }
 
 function renderPlanList(plans) {
@@ -724,7 +735,7 @@ function renderPlanModal(plan, initialInterval) {
   const data = plan ?? makePlan("", defaultStart, defaultEnd, "on", "blue");
   const duration = minutesBetween(data.start, data.end);
   return `
-    <form class="modal" data-form="plan">
+    <form class="modal ${data.kind === "off" ? "plan-off-mode" : ""}" data-form="plan">
       <div class="modal-head">
         <div>
           <h2>${isEdit ? "予定を編集" : "予定を追加"}</h2>
@@ -745,14 +756,14 @@ function renderPlanModal(plan, initialInterval) {
             <div class="field"><label>開始</label><input type="datetime-local" step="300" name="start" value="${dateInputValue(data.start)}" /></div>
             <div class="field"><label>終了</label><input type="datetime-local" step="300" name="end" value="${dateInputValue(data.end)}" /></div>
           </div>
-          <div class="field">
+          <div class="field on-only-field">
             <label>未完了の課題から選ぶ</label>
             <select name="taskID">
               <option value="">選択しない</option>
               ${state.tasks.filter(t => !t.isCompleted || t.id === data.taskID).map(task => `<option value="${task.id}" data-title="${escapeAttr(task.title)}" data-color="${task.color}" ${task.id === data.taskID ? "selected" : ""}>${escapeHtml(task.title)}</option>`).join("")}
             </select>
           </div>
-          <div class="field">
+          <div class="field on-only-field">
             <label>色</label>
             <div class="color-grid">
               ${colorNames.map(color => `<button type="button" class="color-dot ${data.color === color ? "active" : ""}" data-color="${color}" style="background:${planColors[color]}" aria-label="${color}"></button>`).join("")}
@@ -996,6 +1007,7 @@ function bindEvents() {
       const form = button.closest("form");
       form.kind.value = button.dataset.kind;
       form.querySelectorAll("[data-kind]").forEach(item => item.classList.toggle("active", item === button));
+      updatePlanKindMode(form);
     });
   });
 
@@ -1105,6 +1117,17 @@ function updatePlanSummary(form) {
   form.querySelector("[data-summary-range]")?.replaceChildren(document.createTextNode(`${dateText(start)} ${timeText(start)}–${timeText(end)}`));
 }
 
+function updatePlanKindMode(form) {
+  const isOff = form.kind.value === "off";
+  form.classList.toggle("plan-off-mode", isOff);
+  if (!isOff) return;
+  if (form.taskID) form.taskID.value = "";
+  if (form.color) form.color.value = "brown";
+  form.querySelectorAll("[data-color]").forEach(item => {
+    item.classList.toggle("active", item.dataset.color === "brown");
+  });
+}
+
 function savePlanFromForm(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -1121,7 +1144,7 @@ function savePlanFromForm(event) {
     start: start.toISOString(),
     end: end.toISOString(),
     kind: form.kind.value,
-    color: selectedTask?.color ?? form.color.value,
+    color: form.kind.value === "off" ? "brown" : selectedTask?.color ?? form.color.value,
     memo: form.memo.value,
     taskID: form.kind.value === "on" ? (form.taskID.value || null) : null
   };
