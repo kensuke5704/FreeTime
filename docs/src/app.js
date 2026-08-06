@@ -36,7 +36,7 @@ const planColors = {
 };
 
 const colorNames = Object.keys(planColors);
-const views = ["home", "week", "tasks", "templates", "stats"];
+const views = ["home", "week", "tasks", "templates", "stats", "settings"];
 
 let state = loadState();
 let currentView = viewFromHash();
@@ -201,6 +201,19 @@ function fromDateInput(value) {
   return new Date(value);
 }
 
+function minuteInputValue(minutes) {
+  const normalized = Math.max(0, Math.min(1439, Number(minutes) || 0));
+  const h = Math.floor(normalized / 60);
+  const m = normalized % 60;
+  const pad = n => String(n).padStart(2, "0");
+  return `${pad(h)}:${pad(m)}`;
+}
+
+function minutesFromTimeInput(value) {
+  const [hours, minutes] = String(value || "00:00").split(":").map(Number);
+  return Math.max(0, Math.min(1439, (hours || 0) * 60 + (minutes || 0)));
+}
+
 function timeText(value) {
   const d = new Date(value);
   return d.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
@@ -357,17 +370,6 @@ function render() {
             <p class="eyebrow">${new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "long" })}</p>
             <h2>${currentViewTitle()}</h2>
           </div>
-          <div class="top-actions">
-            <div class="sync-cluster">
-              <button class="button sync-button" data-action="google-sync">${renderGoogleSyncButtonLabel()}</button>
-              ${renderGoogleSyncStatus()}
-            </div>
-            <label class="button import-button">
-              読み込み
-              <input type="file" accept="application/json,.json" data-action="import" hidden />
-            </label>
-            <button class="button" data-action="export">書き出し</button>
-          </div>
         </header>
         ${renderViews()}
       </section>
@@ -402,7 +404,8 @@ function currentViewTitle() {
     week: "週間",
     tasks: "課題",
     templates: "テンプレート",
-    stats: "集計"
+    stats: "集計",
+    settings: "設定"
   }[currentView];
 }
 
@@ -413,14 +416,13 @@ function renderViews() {
     <section class="view ${currentView === "tasks" ? "active" : ""}">${renderTasks()}</section>
     <section class="view ${currentView === "templates" ? "active" : ""}">${renderTemplates()}</section>
     <section class="view ${currentView === "stats" ? "active" : ""}">${renderStats()}</section>
+    <section class="view ${currentView === "settings" ? "active" : ""}">${renderSettings()}</section>
   `;
 }
 
 function renderHome() {
   const plans = plansOn(today);
   const onPlans = plans.filter(plan => plan.kind === "on");
-  const upcoming = upcomingPlan();
-  const free = nextFreeInterval();
   const urgentTasks = state.tasks
     .filter(task => !task.isCompleted)
     .sort((a, b) => new Date(a.deadline || "2999-01-01") - new Date(b.deadline || "2999-01-01"))
@@ -428,21 +430,8 @@ function renderHome() {
 
   return `
     <div class="dashboard">
-      <div class="card hero-card">
-        <div class="hero-copy">
-          <div class="metric-label">空き時間</div>
-          <div class="metric-value">${durationText(freeMinutesOn(today))}</div>
-          <p class="quiet-line">${upcoming ? `次は ${timeText(upcoming.start)}「${escapeHtml(upcoming.title)}」` : "この後の予定はありません"}</p>
-        </div>
-        <div class="next-card">
-          <div class="metric-label">次の空き</div>
-          <strong>${free ? `${timeText(free.start)}–${timeText(free.end)}` : "なし"}</strong>
-          <span>${free ? durationText(minutesBetween(free.start, free.end)) : "今日はすべて埋まっています"}</span>
-          ${free ? `<button class="button primary compact" data-action="add-plan-from-free" data-start="${free.start.toISOString()}" data-end="${free.end.toISOString()}">予定にする</button>` : ""}
-        </div>
-      </div>
       <div class="card timeline-card">
-        <div class="section-title"><h2>今日</h2><span class="small muted">空き時間をクリック</span></div>
+        <div class="section-title"><h2>今日</h2></div>
         ${renderHourScale()}
         ${renderTimeline(today, plans, "today", "desktop-main")}
       </div>
@@ -467,7 +456,6 @@ function renderWeek() {
     <div class="card">
       <div class="section-title">
         <h2>週間</h2>
-        <span class="small muted">空き時間をクリック</span>
       </div>
       <div class="week-summary">
         <div><span>${durationText(totalFree)}</span><small>週の空き時間</small></div>
@@ -525,32 +513,53 @@ function renderTemplates() {
   const templates = [...state.templates].sort((a, b) => (a.title || "").localeCompare(b.title || "", "ja"));
   return `
     <div class="card">
-      <div class="section-title"><h2>テンプレート</h2></div>
+      <div class="section-title"><h2>テンプレート</h2><button class="button primary" data-action="add-template">テンプレートを追加</button></div>
       ${templates.length ? `
         <div class="template-grid">
           ${templates.map(template => `
-            <div class="template-card">
+            <button class="template-card" data-action="edit-template" data-template-id="${template.id}">
               <div>
                 <div class="row-title">${escapeHtml(template.title)}</div>
                 <div class="row-meta">${weekdayText(template.weekdays)} ・ ${template.automaticallyApplies ? "自動適用" : "手動"}</div>
               </div>
               <strong>${template.items?.length ?? 0}</strong>
               <small>登録予定</small>
-            </div>
+            </button>
           `).join("")}
         </div>
       ` : `
         <div class="empty template-empty">
           <div>
             <strong>テンプレートはまだありません</strong>
-            <p>iOS版のバックアップJSONを読み込むと、登録済みテンプレートもここに表示されます。</p>
+            <p>よく使う予定の組み合わせを登録できます。</p>
           </div>
-          <label class="button primary import-button">
-            バックアップを読み込む
-            <input type="file" accept="application/json,.json" data-action="import" hidden />
-          </label>
+          <button class="button primary" data-action="add-template">テンプレートを追加</button>
         </div>
       `}
+    </div>
+  `;
+}
+
+function renderSettings() {
+  return `
+    <div class="settings-layout">
+      <div class="card">
+        <div class="section-title"><h2>同期</h2></div>
+        <div class="settings-panel">
+          ${renderGoogleSyncStatus()}
+          <button class="button primary" data-action="google-sync">${renderGoogleSyncButtonLabel()}</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-title"><h2>データ</h2></div>
+        <div class="settings-panel">
+          <label class="button import-button">
+            読み込み
+            <input type="file" accept="application/json,.json" data-action="import" hidden />
+          </label>
+          <button class="button" data-action="export">書き出し</button>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -615,7 +624,7 @@ function weekdayText(weekdays = []) {
 }
 
 function renderHourScale() {
-  return `<div class="hour-scale">${[0, 6, 12, 18, 24].map(h => `<span style="left:${h / 24 * 100}%">${h}:00</span>`).join("")}</div>`;
+  return `<div class="hour-scale">${[6, 12, 18].map(h => `<span style="left:${h / 24 * 100}%">${h}:00</span>`).join("")}</div>`;
 }
 
 function renderTimeline(date, plans, id, extraClass = "") {
@@ -692,7 +701,7 @@ function compareTasks(a, b) {
 }
 
 function renderTabs(position = "bottom") {
-  const labels = { home: "ホーム", week: "週間", tasks: "課題", templates: "テンプレート", stats: "集計" };
+  const labels = { home: "ホーム", week: "週間", tasks: "課題", templates: "テンプレート", stats: "集計", settings: "設定" };
   return `<nav class="tabs ${position === "side" ? "side-tabs" : "bottom-tabs"}">${views.map(view => `<button class="tab ${currentView === view ? "active" : ""}" data-view="${view}">${labels[view]}</button>`).join("")}</nav>`;
 }
 
@@ -704,6 +713,7 @@ function viewFromHash() {
 function renderModal() {
   if (modal.type === "plan") return renderPlanModal(modal.plan, modal.initialInterval);
   if (modal.type === "task") return renderTaskModal(modal.task);
+  if (modal.type === "template") return renderTemplateModal(modal.template);
   return "";
 }
 
@@ -821,6 +831,117 @@ function renderTaskModal(task) {
   `;
 }
 
+function renderTemplateModal(template) {
+  const isEdit = Boolean(template);
+  const data = template ? structuredClone(template) : makeTemplate();
+  if (!Array.isArray(data.items)) data.items = [];
+  return `
+    <form class="modal" data-form="template">
+      <div class="modal-head">
+        <div>
+          <h2>${isEdit ? "テンプレートを編集" : "テンプレートを追加"}</h2>
+          <p>${data.items.length}件の予定 ・ ${weekdayText(data.weekdays)}</p>
+        </div>
+        <button type="button" class="icon-button" data-action="close-modal" aria-label="閉じる">×</button>
+      </div>
+      <input type="hidden" name="id" value="${data.id}" />
+      <div class="modal-body template-modal-body">
+        <div class="form">
+          <div class="field"><label>タイトル</label><input name="title" value="${escapeAttr(data.title)}" placeholder="テンプレート" /></div>
+          <div class="field">
+            <label>曜日</label>
+            <div class="weekday-grid">
+              ${[2, 3, 4, 5, 6, 7, 1].map(day => `
+                <label class="weekday-choice">
+                  <input type="checkbox" name="weekday" value="${day}" ${data.weekdays.includes(day) ? "checked" : ""} />
+                  <span>${escapeHtml(weekdayText([day]))}</span>
+                </label>
+              `).join("")}
+            </div>
+          </div>
+          <label class="check-row">
+            <input type="checkbox" name="automaticallyApplies" ${data.automaticallyApplies !== false ? "checked" : ""} />
+            <span>自動適用する</span>
+          </label>
+          <div class="template-items-head">
+            <label>登録予定</label>
+            <button type="button" class="button compact" data-action="add-template-item">予定を追加</button>
+          </div>
+          <div class="template-items">
+            ${data.items.length ? data.items.map(renderTemplateItemEditor).join("") : `<div class="empty">予定はまだありません</div>`}
+          </div>
+        </div>
+        <aside class="modal-summary">
+          <span>テンプレート</span>
+          <strong>${data.items.length}件</strong>
+          <small>${weekdayText(data.weekdays)}</small>
+          <p>各予定の開始・終了は5分単位で保存されます。</p>
+        </aside>
+      </div>
+      <div class="modal-actions sticky-actions">
+        <div>${isEdit ? `<button type="button" class="button danger" data-action="delete-template" data-template-id="${data.id}">削除</button>` : ""}</div>
+        <div class="action-pair">
+          <button type="button" class="button" data-action="close-modal">キャンセル</button>
+          <button class="button primary" type="submit">${isEdit ? "保存" : "追加"}</button>
+        </div>
+      </div>
+    </form>
+  `;
+}
+
+function renderTemplateItemEditor(item, index) {
+  return `
+    <fieldset class="template-item" data-template-item-index="${index}">
+      <input type="hidden" name="item-id-${index}" value="${item.id}" />
+      <div class="template-item-head">
+        <strong>予定 ${index + 1}</strong>
+        <button type="button" class="icon-button mini" data-action="delete-template-item" data-template-item-index="${index}" aria-label="予定を削除">×</button>
+      </div>
+      <div class="field"><label>タイトル</label><input name="item-title-${index}" value="${escapeAttr(item.title)}" placeholder="予定" /></div>
+      <div class="split">
+        <div class="field"><label>開始</label><input type="time" step="300" name="item-start-${index}" value="${minuteInputValue(item.startMinute)}" /></div>
+        <div class="field"><label>終了</label><input type="time" step="300" name="item-end-${index}" value="${minuteInputValue(item.endMinute)}" /></div>
+      </div>
+      <div class="split">
+        <div class="field">
+          <label>種別</label>
+          <select name="item-kind-${index}">
+            <option value="on" ${item.kind === "on" ? "selected" : ""}>ON</option>
+            <option value="off" ${item.kind === "off" ? "selected" : ""}>OFF</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>色</label>
+          <select name="item-color-${index}">
+            ${colorNames.map(color => `<option value="${color}" ${item.color === color ? "selected" : ""}>${color}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+    </fieldset>
+  `;
+}
+
+function makeTemplate() {
+  return {
+    id: uuid(),
+    title: "",
+    weekdays: [],
+    items: [],
+    automaticallyApplies: true
+  };
+}
+
+function makeTemplateItem() {
+  return {
+    id: uuid(),
+    title: "予定",
+    startMinute: 9 * 60,
+    endMinute: 10 * 60,
+    kind: "on",
+    color: "blue"
+  };
+}
+
 function nextTaskColor() {
   const active = state.tasks.filter(task => !task.isCompleted).map(task => task.color);
   return colorNames.find(color => !active.includes(color)) ?? "blue";
@@ -845,14 +966,19 @@ function bindEvents() {
         openPlanModal(null, { start: new Date(el.dataset.start), end: new Date(el.dataset.end) });
       }
       if (action === "add-task") openTaskModal();
+      if (action === "add-template") openTemplateModal();
       if (action === "edit-plan") {
         event.stopPropagation();
         openPlanModal(state.plans.find(plan => plan.id === el.dataset.planId));
       }
       if (action === "edit-task") openTaskModal(state.tasks.find(task => task.id === el.dataset.taskId));
+      if (action === "edit-template") openTemplateModal(state.templates.find(template => template.id === el.dataset.templateId));
       if (action === "close-modal") closeModal();
       if (action === "delete-plan") deletePlan(el.dataset.planId);
       if (action === "delete-task") deleteTask(el.dataset.taskId);
+      if (action === "delete-template") deleteTemplate(el.dataset.templateId);
+      if (action === "add-template-item") addTemplateItemToModal();
+      if (action === "delete-template-item") deleteTemplateItemFromModal(Number(el.dataset.templateItemIndex));
       if (action === "google-sync") syncWithGoogle();
       if (action === "export") exportBackup();
       if (action === "timeline-click") handleTimelineClick(event, el);
@@ -885,6 +1011,7 @@ function bindEvents() {
   document.querySelector('[data-form="plan"]')?.addEventListener("input", handlePlanFormChange);
   document.querySelector('[data-form="plan"]')?.addEventListener("submit", savePlanFromForm);
   document.querySelector('[data-form="task"]')?.addEventListener("submit", saveTaskFromForm);
+  document.querySelector('[data-form="template"]')?.addEventListener("submit", saveTemplateFromForm);
 }
 
 window.addEventListener("hashchange", () => {
@@ -915,9 +1042,35 @@ function openTaskModal(task = null) {
   render();
 }
 
+function openTemplateModal(template = null) {
+  modal = { type: "template", template: template ? structuredClone(template) : makeTemplate() };
+  render();
+}
+
 function closeModal() {
   modal = null;
   render();
+}
+
+function addTemplateItemToModal() {
+  if (modal?.type !== "template") return;
+  syncTemplateModalFromForm();
+  modal.template.items = Array.isArray(modal.template.items) ? modal.template.items : [];
+  modal.template.items.push(makeTemplateItem());
+  render();
+}
+
+function deleteTemplateItemFromModal(index) {
+  if (modal?.type !== "template") return;
+  syncTemplateModalFromForm();
+  modal.template.items = (modal.template.items ?? []).filter((_, itemIndex) => itemIndex !== index);
+  render();
+}
+
+function syncTemplateModalFromForm() {
+  const form = document.querySelector('[data-form="template"]');
+  if (!form || modal?.type !== "template") return;
+  modal.template = templateFromForm(form);
 }
 
 function handlePlanFormChange(event) {
@@ -1007,6 +1160,43 @@ function saveTaskFromForm(event) {
   closeModal();
 }
 
+function saveTemplateFromForm(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const template = templateFromForm(form);
+  if (!template.title.trim()) template.title = "テンプレート";
+  const invalidItem = template.items.find(item => item.endMinute <= item.startMinute);
+  if (invalidItem) {
+    toast("テンプレート予定の終了は開始より後にしてください");
+    return;
+  }
+  const index = state.templates.findIndex(item => item.id === template.id);
+  if (index >= 0) state.templates[index] = template;
+  else state.templates.push(template);
+  saveState();
+  closeModal();
+}
+
+function templateFromForm(form) {
+  const valueOf = name => form.elements.namedItem(name)?.value ?? "";
+  const itemCount = form.querySelectorAll(".template-item").length;
+  const items = Array.from({ length: itemCount }, (_, index) => ({
+    id: valueOf(`item-id-${index}`) || uuid(),
+    title: valueOf(`item-title-${index}`).trim() || "予定",
+    startMinute: minutesFromTimeInput(valueOf(`item-start-${index}`)),
+    endMinute: minutesFromTimeInput(valueOf(`item-end-${index}`)),
+    kind: valueOf(`item-kind-${index}`) === "off" ? "off" : "on",
+    color: normalizeColor(valueOf(`item-color-${index}`))
+  }));
+  return {
+    id: valueOf("id") || uuid(),
+    title: valueOf("title").trim() || "テンプレート",
+    weekdays: [...form.querySelectorAll('input[name="weekday"]:checked')].map(input => Number(input.value)),
+    items,
+    automaticallyApplies: Boolean(form.elements.namedItem("automaticallyApplies")?.checked)
+  };
+}
+
 function deletePlan(id) {
   if (!confirm("この予定を削除しますか？")) return;
   state.plans = state.plans.filter(plan => plan.id !== id);
@@ -1018,6 +1208,13 @@ function deleteTask(id) {
   if (!confirm("この課題と紐づく予定を削除しますか？")) return;
   state.tasks = state.tasks.filter(task => task.id !== id);
   state.plans = state.plans.filter(plan => plan.taskID !== id);
+  saveState();
+  closeModal();
+}
+
+function deleteTemplate(id) {
+  if (!confirm("このテンプレートを削除しますか？")) return;
+  state.templates = state.templates.filter(template => template.id !== id);
   saveState();
   closeModal();
 }

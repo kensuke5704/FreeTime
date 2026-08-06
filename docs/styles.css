@@ -157,8 +157,8 @@ button { cursor: pointer; }
 
 .plan-block {
   position: absolute;
-  top: 5px;
-  height: calc(100% - 10px);
+  top: -1px;
+  height: calc(100% + 2px);
   border: 0;
   border-radius: 8px;
   color: #fff;
@@ -343,7 +343,7 @@ button { cursor: pointer; }
   transform: translateX(-50%);
   width: min(720px, calc(100% - 24px));
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 6px;
   padding: 8px;
   border: 1px solid rgba(217, 226, 239, 0.95);
@@ -758,10 +758,13 @@ button { cursor: pointer; }
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px 12px;
+  width: 100%;
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 14px;
   background: #fff;
+  color: inherit;
+  text-align: left;
 }
 
 .template-card strong {
@@ -777,6 +780,106 @@ button { cursor: pointer; }
   margin-top: -8px;
   color: var(--muted);
   font-weight: 800;
+}
+
+.settings-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.settings-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.settings-panel .button {
+  min-width: 132px;
+}
+
+.template-modal-body {
+  grid-template-columns: minmax(0, 1fr) 220px;
+}
+
+.weekday-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.weekday-choice {
+  position: relative;
+}
+
+.weekday-choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.weekday-choice span {
+  display: grid;
+  min-height: 38px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.weekday-choice input:checked + span {
+  border-color: var(--blue);
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--blue);
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.template-items-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.template-items {
+  display: grid;
+  gap: 10px;
+}
+
+.template-item {
+  min-width: 0;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  background: #f8fafc;
+}
+
+.template-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.icon-button.mini {
+  width: 30px;
+  height: 30px;
+  font-size: 18px;
 }
 
 .toast {
@@ -1108,8 +1211,8 @@ button { cursor: pointer; }
   }
 
   .plan-block {
-    top: 8px;
-    height: calc(100% - 16px);
+    top: -1px;
+    height: calc(100% + 2px);
     border-radius: 10px;
     font-size: 13px;
     padding: 0 12px;
@@ -1675,8 +1778,8 @@ body {
   }
 
   .plan-block {
-    top: 6px;
-    height: calc(100% - 12px);
+    top: -1px;
+    height: calc(100% + 2px);
     border-radius: 9px;
     padding-inline: 8px;
     font-size: 12px;
