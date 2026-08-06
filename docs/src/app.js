@@ -374,7 +374,7 @@ function render() {
         ${renderViews()}
       </section>
     </main>
-    <button class="fab" data-action="add-plan" aria-label="予定を追加">+</button>
+    ${["home", "week"].includes(currentView) ? `<button class="fab" data-action="add-plan" aria-label="予定を追加">+</button>` : ""}
     ${renderTabs("bottom")}
     <div class="modal-backdrop ${modal ? "active" : ""}" data-modal-backdrop>${modal ? renderModal() : ""}</div>
     <div class="toast" id="toast"></div>
@@ -530,8 +530,8 @@ function renderTemplates() {
       ` : `
         <div class="empty template-empty">
           <div>
-            <strong>テンプレートはまだありません</strong>
-            <p>よく使う予定の組み合わせを登録できます。</p>
+            <strong>テンプレートはありません</strong>
+            <p>よく使う予定をまとめておけます。</p>
           </div>
           <button class="button primary" data-action="add-template">テンプレートを追加</button>
         </div>
